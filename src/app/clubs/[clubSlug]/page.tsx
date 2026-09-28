@@ -8,12 +8,6 @@ import { getClubs, getEvents } from "@/lib/store";
 import { useAuth } from "@/components/auth-context";
 import { Calendar, MapPin, Users, ArrowLeft } from "lucide-react";
 
-const SLUGS = ["tech-club", "entrepreneur-club", "ai-ml-club", "dsa-club", "sports-club", "communications-club"];
-
-export function generateStaticParams() {
-  return SLUGS.map((clubSlug) => ({ clubSlug }));
-}
-
 export default function ClubPage({
   params,
 }: {
