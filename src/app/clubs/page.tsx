@@ -1,9 +1,14 @@
+"use client";
+
 import Link from "next/link";
 import { SonarGrid } from "@/components/ui/sonar-grid";
-import { clubs, events } from "@/lib/data";
+import { getClubs, getEvents } from "@/lib/store";
 import { Users, Calendar, ArrowRight } from "lucide-react";
 
 export default function ClubsPage() {
+  const clubs = getClubs();
+  const events = getEvents();
+
   return (
     <div className="relative min-h-screen">
       {/* Hero with sonar grid background */}

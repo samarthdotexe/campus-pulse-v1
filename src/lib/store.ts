@@ -1,4 +1,4 @@
-import { CampusEvent, User, RsvpSubmission, events as seedEvents } from "./data";
+import { CampusEvent, Club, User, RsvpSubmission, events as seedEvents, clubs as seedClubs } from "./data";
 
 const KEYS = {
   user: "cp_user",
@@ -27,6 +27,10 @@ export function getUser(): User | null {
 
 export function setUser(user: User | null): void {
   write(KEYS.user, user);
+}
+
+export function getClubs(): Club[] {
+  return seedClubs;
 }
 
 export function getEvents(): CampusEvent[] {

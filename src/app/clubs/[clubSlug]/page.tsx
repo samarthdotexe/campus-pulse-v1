@@ -1,19 +1,28 @@
+"use client";
+
+import { use } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { WebsiteShaderCanvas } from "@/components/ui/shader-aurora-veil";
-import { clubs, events } from "@/lib/data";
+import { getClubs, getEvents } from "@/lib/store";
+import { useAuth } from "@/components/auth-context";
 import { Calendar, MapPin, Users, ArrowLeft } from "lucide-react";
 
-export async function generateStaticParams() {
-  return clubs.map((club) => ({ clubSlug: club.slug }));
+const SLUGS = ["tech-club", "entrepreneur-club", "ai-ml-club", "dsa-club", "sports-club", "communications-club"];
+
+export function generateStaticParams() {
+  return SLUGS.map((clubSlug) => ({ clubSlug }));
 }
 
-export default async function ClubPage({
+export default function ClubPage({
   params,
 }: {
   params: Promise<{ clubSlug: string }>;
 }) {
-  const { clubSlug } = await params;
+  const { clubSlug } = use(params);
+  const { user } = useAuth();
+  const clubs = getClubs();
+  const events = getEvents();
   const club = clubs.find((c) => c.slug === clubSlug);
 
   if (!club) notFound();
@@ -97,13 +106,6 @@ export default async function ClubPage({
                   <div className="mt-1 text-xs text-white/40">Events</div>
                 </div>
               </div>
-
-              <button
-                className="mt-6 w-full rounded-xl py-3 text-sm font-semibold text-black transition-opacity hover:opacity-90"
-                style={{ backgroundColor: club.color }}
-              >
-                Join {club.name}
-              </button>
             </div>
           </div>
 
@@ -175,6 +177,15 @@ export default async function ClubPage({
                               }}
                             />
                           </div>
+                          {user?.role === "participant" && (
+                            <Link
+                              href={`/events/${event.id}/rsvp`}
+                              className="mt-3 inline-block rounded-lg px-3 py-1.5 text-xs font-semibold text-black transition-opacity hover:opacity-90"
+                              style={{ backgroundColor: club.color }}
+                            >
+                              RSVP
+                            </Link>
+                          )}
                         </div>
                       </div>
                     </div>

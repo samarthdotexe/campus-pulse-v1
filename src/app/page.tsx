@@ -1,10 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import { WebsiteShaderCanvas } from "@/components/ui/shader-aurora-veil";
 import { SonarGrid } from "@/components/ui/sonar-grid";
-import { events, clubs } from "@/lib/data";
+import { getEvents, getClubs } from "@/lib/store";
+import { useAuth } from "@/components/auth-context";
 import { Calendar, MapPin, Users, ArrowRight } from "lucide-react";
 
 export default function HomePage() {
+  const { user } = useAuth();
+  const clubs = getClubs();
+  const events = getEvents();
   const upcomingEvents = [...events].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
@@ -83,6 +89,8 @@ export default function HomePage() {
             const fillPercent = Math.round(
               (event.rsvps / event.capacity) * 100
             );
+            const isParticipant = user?.role === "participant";
+            const hasRsvped = event.rsvps >= event.capacity;
 
             return (
               <div
@@ -149,6 +157,20 @@ export default function HomePage() {
                     }}
                   />
                 </div>
+
+                {isParticipant && (
+                  <Link
+                    href={`/events/${event.id}/rsvp`}
+                    className={`mt-4 block w-full rounded-lg py-2 text-center text-sm font-semibold transition-opacity ${hasRsvped
+                        ? "cursor-not-allowed bg-white/5 text-white/30"
+                        : "bg-white/10 text-white hover:bg-white/15"
+                      }`}
+                    style={!hasRsvped ? { color: club?.color ?? "#7bd8c4" } : undefined}
+                    onClick={(e) => hasRsvped && e.preventDefault()}
+                  >
+                    {hasRsvped ? "Full" : "RSVP"}
+                  </Link>
+                )}
               </div>
             );
           })}
@@ -161,33 +183,39 @@ export default function HomePage() {
           <h2 className="mb-8 text-3xl font-bold tracking-tight text-white">
             Browse by Club
           </h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {clubs.map((club) => (
-              <Link
-                key={club.slug}
-                href={`/clubs/${club.slug}`}
-                className="group flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-all hover:border-white/20 hover:bg-white/[0.05]"
-              >
-                <div
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-bold"
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {clubs.map((club) => {
+              const eventCount = events.filter((e) => e.clubSlug === club.slug).length;
+              return (
+                <Link
+                  key={club.slug}
+                  href={`/clubs/${club.slug}`}
+                  className="group flex flex-col items-center rounded-2xl border border-white/10 p-6 text-center transition-all hover:scale-[1.02] hover:border-white/25"
                   style={{
-                    backgroundColor: `${club.color}15`,
-                    color: club.color,
+                    background: `linear-gradient(to bottom, ${club.color}10, transparent)`,
                   }}
                 >
-                  {club.name.charAt(0)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-white group-hover:text-emerald-300 transition-colors">
+                  <div
+                    className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-2xl font-bold"
+                    style={{
+                      backgroundColor: `${club.color}20`,
+                      color: club.color,
+                    }}
+                  >
+                    {club.name.charAt(0)}
+                  </div>
+                  <h3 className="mt-4 text-lg font-semibold text-white transition-colors group-hover:text-emerald-300">
                     {club.name}
                   </h3>
-                  <p className="truncate text-sm text-white/40">
+                  <p className="mt-1 text-sm text-white/40">
                     {club.tagline}
                   </p>
-                </div>
-                <ArrowRight className="h-4 w-4 shrink-0 text-white/20 transition-transform group-hover:translate-x-1 group-hover:text-white/50" />
-              </Link>
-            ))}
+                  <div className="mt-auto pt-5 text-xs text-white/30">
+                    {eventCount} event{eventCount !== 1 ? "s" : ""}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
