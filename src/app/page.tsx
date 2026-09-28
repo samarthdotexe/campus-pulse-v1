@@ -1,11 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { WebsiteShaderCanvas } from "@/components/ui/shader-aurora-veil";
 import { SonarGrid } from "@/components/ui/sonar-grid";
 import { getEvents, getClubs } from "@/lib/store";
 import { useAuth } from "@/components/auth-context";
 import { Calendar, MapPin, Users, ArrowRight } from "lucide-react";
+
+const CLUB_IMAGES: Record<string, string> = {
+  "tech-club": "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=400&fit=crop&q=80",
+  "entrepreneur-club": "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=400&h=400&fit=crop&q=80",
+  "ai-ml-club": "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=400&fit=crop&q=80",
+  "dsa-club": "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=400&h=400&fit=crop&q=80",
+  "sports-club": "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400&h=400&fit=crop&q=80",
+  "communications-club": "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=400&h=400&fit=crop&q=80",
+};
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -34,6 +44,9 @@ export default function HomePage() {
             <p className="mt-6 max-w-2xl text-lg text-white/60 sm:text-xl">
               Stop missing events you'd love. Browse hackathons, workshops,
               open mics, and tournaments — all from every club on campus.
+            </p>
+            <p className="mt-4 text-sm tracking-wide text-white/40 sm:text-base">
+              One Campus. One Calendar. Zero <span className="font-bold text-white/70">FOMO</span>
             </p>
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <a
@@ -190,28 +203,28 @@ export default function HomePage() {
                 <Link
                   key={club.slug}
                   href={`/clubs/${club.slug}`}
-                  className="group flex flex-col items-center rounded-2xl border border-white/10 p-6 text-center transition-all hover:scale-[1.02] hover:border-white/25"
-                  style={{
-                    background: `linear-gradient(to bottom, ${club.color}10, transparent)`,
-                  }}
+                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 transition-all hover:scale-[1.02] hover:border-white/25"
                 >
-                  <div
-                    className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-2xl font-bold"
-                    style={{
-                      backgroundColor: `${club.color}20`,
-                      color: club.color,
-                    }}
-                  >
-                    {club.name.charAt(0)}
+                  <div className="relative h-36 w-full overflow-hidden">
+                    <Image
+                      src={CLUB_IMAGES[club.slug] ?? ""}
+                      alt={club.name}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
                   </div>
-                  <h3 className="mt-4 text-lg font-semibold text-white transition-colors group-hover:text-emerald-300">
-                    {club.name}
-                  </h3>
-                  <p className="mt-1 text-sm text-white/40">
-                    {club.tagline}
-                  </p>
-                  <div className="mt-auto pt-5 text-xs text-white/30">
-                    {eventCount} event{eventCount !== 1 ? "s" : ""}
+                  <div className="relative z-10 -mt-8 flex flex-col px-5 pb-5">
+                    <h3 className="text-lg font-semibold text-white transition-colors group-hover:text-emerald-300">
+                      {club.name}
+                    </h3>
+                    <p className="mt-1 text-sm text-white/50">
+                      {club.tagline}
+                    </p>
+                    <div className="mt-3 text-xs text-white/30">
+                      {eventCount} event{eventCount !== 1 ? "s" : ""}
+                    </div>
                   </div>
                 </Link>
               );

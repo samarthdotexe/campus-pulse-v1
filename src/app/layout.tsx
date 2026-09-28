@@ -14,6 +14,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Campus Pulse",
   description: "A Unified Event Discovery Platform for Campus Life",
+  icons: { icon: "/campus-pulse-icon.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
