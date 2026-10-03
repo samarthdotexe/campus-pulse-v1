@@ -6,6 +6,7 @@ import { getEvents, deleteEvent } from "@/lib/store";
 import { clubs } from "@/lib/data";
 import { useAuth } from "@/components/auth-context";
 import { Calendar, MapPin, Users } from "lucide-react";
+import { motion } from "motion/react";
 
 export default function EventDetailPage() {
   const params = useParams<{ id: string }>();
@@ -25,7 +26,7 @@ export default function EventDetailPage() {
 
   const club = clubs.find((c) => c.slug === event.clubSlug);
   const fillPercent = Math.round((event.rsvps / event.capacity) * 100);
-  const isOwner = user?.role === "committee" && event.createdBy === user.id;
+  const isOwner = user?.role === "admin" || (user?.role === "committee" && (event.createdBy === user.id || event.clubSlug === user.clubSlug));
 
   const handleDelete = () => {
     if (confirm("Delete this event?")) {
@@ -36,7 +37,12 @@ export default function EventDetailPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", bounce: 0.12, visualDuration: 0.5 }}
+        className="rounded-2xl border border-white/10 bg-white/[0.03] p-8"
+      >
         <div className="mb-6 flex items-start justify-between">
           <span
             className="rounded-lg px-2.5 py-1 text-xs font-medium"
@@ -66,9 +72,12 @@ export default function EventDetailPage() {
         </div>
 
         <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/5">
-          <div
-            className="h-full rounded-full transition-all"
-            style={{ width: `${fillPercent}%`, backgroundColor: club?.color ?? "#7bd8c4" }}
+          <motion.div
+            className="h-full rounded-full"
+            style={{ backgroundColor: club?.color ?? "#7bd8c4" }}
+            initial={{ width: 0 }}
+            animate={{ width: `${fillPercent}%` }}
+            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
           />
         </div>
 
@@ -86,29 +95,45 @@ export default function EventDetailPage() {
           </div>
         )}
 
-        <div className="mt-8 flex flex-wrap gap-3 border-t border-white/10 pt-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.4 }}
+          className="mt-8 flex flex-wrap gap-3 border-t border-white/10 pt-6"
+        >
           {!user && (
-            <Link href="/login" className="rounded-full bg-white/10 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-white/20">
-              Login to RSVP
-            </Link>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              <Link href="/login" className="rounded-full bg-white/10 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-white/20">
+                Login to RSVP
+              </Link>
+            </motion.div>
           )}
           {user?.role === "participant" && (
-            <Link href={`/events/${event.id}/rsvp`} className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90">
-              RSVP
-            </Link>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              <Link href={`/events/${event.id}/rsvp`} className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90">
+                RSVP
+              </Link>
+            </motion.div>
           )}
           {isOwner && (
             <>
-              <Link href={`/events/${event.id}/edit`} className="rounded-full bg-white/10 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-white/20">
-                Edit
-              </Link>
-              <button onClick={handleDelete} className="rounded-full bg-red-500/10 px-6 py-2.5 text-sm font-medium text-red-400 transition hover:bg-red-500/20">
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <Link href={`/events/${event.id}/edit`} className="rounded-full bg-white/10 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-white/20">
+                  Edit
+                </Link>
+              </motion.div>
+              <motion.button
+                onClick={handleDelete}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="rounded-full bg-red-500/10 px-6 py-2.5 text-sm font-medium text-red-400 transition hover:bg-red-500/20"
+              >
                 Delete
-              </button>
+              </motion.button>
             </>
           )}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

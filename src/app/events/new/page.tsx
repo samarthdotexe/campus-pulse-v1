@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth-context";
 import { addEvent } from "@/lib/store";
 import { clubs, RsvpQuestion } from "@/lib/data";
 import { X } from "lucide-react";
+import { motion } from "motion/react";
 
 export default function NewEventPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function NewEventPage() {
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
   const [capacity, setCapacity] = useState("");
+  const [selectedClub, setSelectedClub] = useState("");
   const [questions, setQuestions] = useState<RsvpQuestion[]>([]);
   const [showQForm, setShowQForm] = useState(false);
   const [qLabel, setQLabel] = useState("");
@@ -24,12 +26,13 @@ export default function NewEventPage() {
   const [qOptions, setQOptions] = useState("");
 
   useEffect(() => {
-    if (user && user.role !== "committee") router.replace("/login");
+    if (user && user.role !== "committee" && user.role !== "admin") router.replace("/login");
   }, [user, router]);
 
-  if (!user || user.role !== "committee") return null;
+  if (!user || (user.role !== "committee" && user.role !== "admin")) return null;
 
-  const club = clubs.find((c) => c.slug === user.clubSlug);
+  const clubSlug = user.role === "admin" ? selectedClub || clubs[0]?.slug : user.clubSlug!;
+  const club = clubs.find((c) => c.slug === clubSlug);
 
   const addQuestion = () => {
     if (!qLabel.trim()) return;
@@ -56,7 +59,7 @@ export default function NewEventPage() {
       date,
       time,
       location,
-      clubSlug: user.clubSlug!,
+      clubSlug,
       rsvps: 0,
       capacity: Number(capacity),
       createdBy: user.id,
@@ -70,7 +73,12 @@ export default function NewEventPage() {
   const labelCls = "block text-sm font-medium text-white/60 mb-1.5";
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", bounce: 0.12, visualDuration: 0.5 }}
+      className="mx-auto max-w-2xl px-6 py-10"
+    >
       <h1 className="mb-8 text-3xl font-bold tracking-tight text-white">Create Event</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
@@ -104,7 +112,11 @@ export default function NewEventPage() {
           <div>
             <label className={labelCls}>Club</label>
             <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-white/50">
-              {club?.name ?? user.clubSlug}
+              {user.role === "admin" ? (
+                <select value={clubSlug} onChange={(e) => setSelectedClub(e.target.value)} className="w-full bg-transparent text-sm text-white outline-none">
+                  {clubs.map((item) => <option key={item.slug} value={item.slug} className="bg-black">{item.name}</option>)}
+                </select>
+              ) : (club?.name ?? user.clubSlug)}
             </div>
           </div>
         </div>
@@ -158,10 +170,15 @@ export default function NewEventPage() {
           )}
         </div>
 
-        <button type="submit" className="mt-4 w-full rounded-xl bg-white py-3 text-sm font-semibold text-black transition hover:bg-white/90">
+        <motion.button
+          type="submit"
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
+          className="mt-4 w-full rounded-xl bg-white py-3 text-sm font-semibold text-black transition hover:bg-white/90"
+        >
           Create Event
-        </button>
+        </motion.button>
       </form>
-    </div>
+    </motion.div>
   );
 }

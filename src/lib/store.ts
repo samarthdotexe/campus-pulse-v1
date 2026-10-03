@@ -4,6 +4,7 @@ const KEYS = {
   user: "cp_user",
   events: "cp_events",
   rsvps: "cp_rsvps",
+  clubs: "cp_clubs",
 } as const;
 
 function read<T>(key: string, fallback: T): T {
@@ -30,7 +31,19 @@ export function setUser(user: User | null): void {
 }
 
 export function getClubs(): Club[] {
-  return seedClubs;
+  return read<Club[]>(KEYS.clubs, seedClubs);
+}
+
+export function saveClubs(clubs: Club[]): void {
+  write(KEYS.clubs, clubs);
+}
+
+export function addClub(club: Club): void {
+  saveClubs([...getClubs(), club]);
+}
+
+export function updateClub(updated: Club): void {
+  saveClubs(getClubs().map((club) => club.slug === updated.slug ? updated : club));
 }
 
 export function getEvents(): CampusEvent[] {
@@ -74,6 +87,20 @@ export function addRsvp(submission: RsvpSubmission): void {
 
 export function hasUserRsvped(userId: string, eventId: string): boolean {
   return getRsvps().some((r) => r.userId === userId && r.eventId === eventId);
+}
+
+export function removeRsvp(userId: string, eventId: string): void {
+  const rsvps = getRsvps();
+  const removed = rsvps.some((r) => r.userId === userId && r.eventId === eventId);
+  if (!removed) return;
+
+  write(KEYS.rsvps, rsvps.filter((r) => r.userId !== userId || r.eventId !== eventId));
+  const events = getEvents();
+  const event = events.find((item) => item.id === eventId);
+  if (event) {
+    event.rsvps = Math.max(0, event.rsvps - 1);
+    saveEvents(events);
+  }
 }
 
 export function initStore(): void {

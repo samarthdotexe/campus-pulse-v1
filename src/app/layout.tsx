@@ -22,8 +22,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning className={inter.variable}>
       <body className="min-h-screen bg-black text-white antialiased font-sans">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          <Navbar />
-          <main className="pt-16"><AuthProvider>{children}</AuthProvider></main>
+          <AuthProvider>
+            <Navbar />
+            <main className="pt-16">{children}</main>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

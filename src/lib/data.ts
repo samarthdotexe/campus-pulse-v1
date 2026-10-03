@@ -1,4 +1,4 @@
-export type UserRole = "participant" | "committee";
+export type UserRole = "participant" | "committee" | "admin";
 
 export interface User {
   id: string;
@@ -47,6 +47,7 @@ export interface Club {
   category: string;
   memberCount: number;
   color: string;
+  logo?: string;
 }
 
 export const clubs: Club[] = [

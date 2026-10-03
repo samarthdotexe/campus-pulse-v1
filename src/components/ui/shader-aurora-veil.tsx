@@ -11,7 +11,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 export type WebsiteShaderId = "aurora-veil" | "kinetic-dots";

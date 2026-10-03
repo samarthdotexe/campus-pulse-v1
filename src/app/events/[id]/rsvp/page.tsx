@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-context";
-import { getEvents, addRsvp, hasUserRsvped } from "@/lib/store";
+import { getEvents, addRsvp, hasUserRsvped, removeRsvp } from "@/lib/store";
 import { clubs } from "@/lib/data";
+import { motion } from "motion/react";
 
 export default function RsvpPage() {
   const params = useParams<{ id: string }>();
@@ -16,21 +17,16 @@ export default function RsvpPage() {
 
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [submitted, setSubmitted] = useState(false);
-  const [alreadyRsvped, setAlreadyRsvped] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
 
   useEffect(() => {
     if (!user || user.role !== "participant") {
       router.replace("/login");
-      return;
     }
-    if (event && hasUserRsvped(user.id, event.id)) {
-      setAlreadyRsvped(true);
-    }
-    setReady(true);
   }, [user, event, router]);
 
-  if (!ready || !event || !user) return null;
+  if (!event || !user || user.role !== "participant") return null;
+  const alreadyRsvped = hasUserRsvped(user.id, event.id);
 
   const club = clubs.find((c) => c.slug === event.clubSlug);
 
@@ -47,7 +43,7 @@ export default function RsvpPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     addRsvp({
-      id: `rsvp-${Date.now()}`,
+      id: `rsvp-${crypto.randomUUID()}`,
       eventId: event.id,
       userId: user.id,
       answers,
@@ -56,14 +52,40 @@ export default function RsvpPage() {
     setSubmitted(true);
   };
 
+  const calendarUrl = (() => {
+    const [hours = 0, minutes = 0] = event.time.match(/\d+/g)?.map(Number) ?? [];
+    const isPm = /PM/i.test(event.time);
+    const hour24 = (hours % 12) + (isPm ? 12 : 0);
+    const start = new Date(`${event.date}T${String(hour24).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const format = (date: Date) => `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}T${String(date.getHours()).padStart(2, "0")}${String(date.getMinutes()).padStart(2, "0")}00`;
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${format(start)}/${format(end)}&details=${encodeURIComponent(event.description)}&location=${encodeURIComponent(event.location)}`;
+  })();
+
+  const handleCancel = () => {
+    removeRsvp(user.id, event.id);
+    setCancelled(true);
+  };
+
+  if (cancelled) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-20 text-center">
+        <h1 className="text-2xl font-bold text-white">Removed. No hard feelings. (Okay, maybe a little.)</h1>
+        <p className="mt-2 text-white/50">Your RSVP for {event.title} has been cancelled.</p>
+        <Link href={`/events/${event.id}`} className="mt-6 inline-block rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90">Back to Event</Link>
+      </div>
+    );
+  }
+
   if (alreadyRsvped) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-20 text-center">
         <h1 className="text-2xl font-bold text-white">Already RSVPed</h1>
         <p className="mt-2 text-white/50">You have already submitted your RSVP for this event.</p>
-        <Link href={`/events/${event.id}`} className="mt-6 inline-block rounded-full bg-white/10 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-white/20">
-          Back to Event
-        </Link>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <a href={calendarUrl} target="_blank" rel="noreferrer" className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90">Add to Google Calendar</a>
+          <button onClick={handleCancel} className="rounded-full bg-red-500/10 px-6 py-2.5 text-sm font-medium text-red-300 transition hover:bg-red-500/20">Cancel RSVP</button>
+        </div>
       </div>
     );
   }
@@ -71,11 +93,12 @@ export default function RsvpPage() {
   if (submitted) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-20 text-center">
-        <h1 className="text-2xl font-bold text-emerald-400">RSVP Confirmed!</h1>
+        <h1 className="text-2xl font-bold text-emerald-400">Locked in. Don&apos;t ghost us.</h1>
         <p className="mt-2 text-white/50">You are registered for {event.title}.</p>
-        <Link href={`/events/${event.id}`} className="mt-6 inline-block rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90">
-          Back to Event
-        </Link>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <a href={calendarUrl} target="_blank" rel="noreferrer" className="rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90">Add to Google Calendar</a>
+          <Link href={`/events/${event.id}`} className="rounded-full bg-white/10 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-white/20">Back to Event</Link>
+        </div>
       </div>
     );
   }
@@ -84,7 +107,12 @@ export default function RsvpPage() {
   const labelCls = "block text-sm font-medium text-white/60 mb-1.5";
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", bounce: 0.12, visualDuration: 0.5 }}
+      className="mx-auto max-w-2xl px-6 py-10"
+    >
       <div className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <span
           className="rounded-lg px-2.5 py-1 text-xs font-medium"
@@ -177,10 +205,15 @@ export default function RsvpPage() {
           ))
         )}
 
-        <button type="submit" className="mt-4 w-full rounded-xl bg-white py-3 text-sm font-semibold text-black transition hover:bg-white/90">
+        <motion.button
+          type="submit"
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
+          className="mt-4 w-full rounded-xl bg-white py-3 text-sm font-semibold text-black transition hover:bg-white/90"
+        >
           Confirm RSVP
-        </button>
+        </motion.button>
       </form>
-    </div>
+    </motion.div>
   );
 }

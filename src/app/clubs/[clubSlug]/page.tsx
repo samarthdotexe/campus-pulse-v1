@@ -7,6 +7,16 @@ import { WebsiteShaderCanvas } from "@/components/ui/shader-aurora-veil";
 import { getClubs, getEvents } from "@/lib/store";
 import { useAuth } from "@/components/auth-context";
 import { Calendar, MapPin, Users, ArrowLeft } from "lucide-react";
+import { motion } from "motion/react";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0 },
+};
+
+const stagger = {
+  visible: { transition: { staggerChildren: 0.08 } },
+};
 
 export default function ClubPage({
   params,
@@ -27,25 +37,31 @@ export default function ClubPage({
 
   return (
     <div className="relative min-h-screen">
-      {/* Club Hero with aurora-veil background tinted to club color */}
       <section className="relative h-[50vh] w-full">
         <WebsiteShaderCanvas
           preset="aurora-veil"
           tone="dark"
           className="absolute inset-0 h-full w-full"
         >
-          <div className="flex h-full flex-col items-start justify-end px-6 pb-12">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={stagger}
+            className="flex h-full flex-col items-start justify-end px-6 pb-12"
+          >
             <div className="mx-auto w-full max-w-6xl">
-              <Link
-                href="/clubs"
-                className="mb-6 inline-flex items-center gap-1.5 text-sm text-white/40 transition-colors hover:text-white/70"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                All Clubs
-              </Link>
+              <motion.div variants={fadeUp} transition={{ type: "spring", bounce: 0.15, visualDuration: 0.5 }}>
+                <Link
+                  href="/clubs"
+                  className="mb-6 inline-flex items-center gap-1.5 text-sm text-white/40 transition-colors hover:text-white/70"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  All Clubs
+                </Link>
+              </motion.div>
 
-              <div className="flex items-end gap-6">
-                <div
+              <motion.div variants={fadeUp} transition={{ type: "spring", bounce: 0.15, visualDuration: 0.6 }} className="flex items-end gap-6">
+                {club.logo ? <img src={club.logo} alt={`${club.name} logo`} className="h-20 w-20 shrink-0 rounded-2xl object-cover shadow-2xl" /> : <div
                   className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl text-3xl font-bold shadow-2xl"
                   style={{
                     backgroundColor: `${club.color}20`,
@@ -54,7 +70,7 @@ export default function ClubPage({
                   }}
                 >
                   {club.name.charAt(0)}
-                </div>
+                </div>}
                 <div>
                   <div
                     className="mb-2 inline-block rounded-md px-2 py-0.5 text-xs font-medium"
@@ -70,17 +86,19 @@ export default function ClubPage({
                   </h1>
                   <p className="mt-1 text-lg text-white/50">{club.tagline}</p>
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </WebsiteShaderCanvas>
       </section>
 
-      {/* Club Info + Events */}
       <section className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid gap-12 lg:grid-cols-[1fr_2fr]">
-          {/* Sidebar */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ type: "spring", bounce: 0.15, visualDuration: 0.6, delay: 0.2 }}
+          >
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
               <p className="text-sm leading-relaxed text-white/60">
                 {club.description}
@@ -101,36 +119,53 @@ export default function ClubPage({
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Events List */}
           <div>
-            <h2 className="mb-6 text-2xl font-bold text-white">
+            <motion.h2
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+              className="mb-6 text-2xl font-bold text-white"
+            >
               Upcoming Events
-            </h2>
+            </motion.h2>
 
             {clubEvents.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-12 text-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4, duration: 0.4 }}
+                className="rounded-2xl border border-white/10 bg-white/[0.02] p-12 text-center"
+              >
                 <Calendar className="mx-auto h-10 w-10 text-white/20" />
                 <p className="mt-4 text-white/40">
                   No upcoming events from {club.name} yet.
                 </p>
-              </div>
+              </motion.div>
             ) : (
-              <div className="space-y-4">
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={stagger}
+                className="space-y-4"
+              >
                 {clubEvents.map((event) => {
                   const fillPercent = Math.round(
                     (event.rsvps / event.capacity) * 100
                   );
 
                   return (
-                    <div
+                    <motion.div
                       key={event.id}
-                      className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition-all hover:border-white/20 hover:bg-white/[0.06]"
+                      variants={fadeUp}
+                      transition={{ type: "spring", bounce: 0.12, visualDuration: 0.5 }}
+                      whileHover={{ x: 4, transition: { duration: 0.15 } }}
+                      className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-white/20 hover:bg-white/[0.06]"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-lg font-semibold text-white group-hover:text-emerald-300 transition-colors">
+                          <h3 className="text-lg font-semibold text-white transition-colors group-hover:text-emerald-300">
                             {event.title}
                           </h3>
                           <p className="mt-1.5 text-sm leading-relaxed text-white/50">
@@ -182,10 +217,10 @@ export default function ClubPage({
                           )}
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
-              </div>
+              </motion.div>
             )}
           </div>
         </div>

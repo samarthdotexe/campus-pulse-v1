@@ -7,6 +7,7 @@ import { SonarGrid } from "@/components/ui/sonar-grid";
 import { getEvents, getClubs } from "@/lib/store";
 import { useAuth } from "@/components/auth-context";
 import { Calendar, MapPin, Users, ArrowRight } from "lucide-react";
+import { motion } from "motion/react";
 
 const CLUB_IMAGES: Record<string, string> = {
   "tech-club": "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=400&fit=crop&q=80",
@@ -15,6 +16,15 @@ const CLUB_IMAGES: Record<string, string> = {
   "dsa-club": "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=400&h=400&fit=crop&q=80",
   "sports-club": "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400&h=400&fit=crop&q=80",
   "communications-club": "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=400&h=400&fit=crop&q=80",
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0 },
+};
+
+const stagger = {
+  visible: { transition: { staggerChildren: 0.08 } },
 };
 
 export default function HomePage() {
@@ -27,48 +37,87 @@ export default function HomePage() {
 
   return (
     <div className="relative min-h-screen">
-      {/* Hero Section with Aurora Veil Background */}
+      {/* Hero Section */}
       <section className="relative h-[85vh] w-full">
         <WebsiteShaderCanvas
           preset="aurora-veil"
           tone="dark"
           className="absolute inset-0 h-full w-full"
         >
-          <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-            <h1 className="max-w-4xl text-5xl font-bold leading-tight tracking-tight text-white sm:text-7xl">
-              Everything happening on campus,{" "}
-              <span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
-                in one place
-              </span>
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg text-white/60 sm:text-xl">
-              Stop missing events you'd love. Browse hackathons, workshops,
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={stagger}
+            className="flex h-full flex-col items-center justify-center px-6 text-center"
+          >
+            <motion.p
+              variants={fadeUp}
+              transition={{ type: "spring", bounce: 0.15, visualDuration: 0.6 }}
+              className="mb-2 text-sm font-medium uppercase tracking-[0.16em] text-white"
+            >
+              Welcome to
+            </motion.p>
+            <motion.h1
+              variants={fadeUp}
+              transition={{ type: "spring", bounce: 0.15, visualDuration: 0.6 }}
+              className="text-[42px] font-bold leading-none tracking-tight text-white"
+            >
+              Campus <span className="text-[#1de9b6]">Pulse</span>
+            </motion.h1>
+            <motion.div variants={fadeUp} className="mt-4 h-[3px] w-[120px] rounded-full bg-gradient-to-r from-emerald-400 to-teal-300" />
+            <motion.p variants={fadeUp} transition={{ type: "spring", bounce: 0.15, visualDuration: 0.6 }} className="mt-7 max-w-4xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
+              Everything happening on campus <span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">in one place</span>
+            </motion.p>
+            <motion.p
+              variants={fadeUp}
+              transition={{ type: "spring", bounce: 0.15, visualDuration: 0.6 }}
+              className="mt-5 max-w-2xl text-lg text-white/60 sm:text-xl"
+            >
+              Stop missing events you&apos;d love. Browse hackathons, workshops,
               open mics, and tournaments — all from every club on campus.
-            </p>
-            <p className="mt-4 text-sm tracking-wide text-white/40 sm:text-base">
+            </motion.p>
+            <motion.p
+              variants={fadeUp}
+              transition={{ type: "spring", bounce: 0.15, visualDuration: 0.6 }}
+              className="mt-4 text-sm tracking-wide text-white/40 sm:text-base"
+            >
               One Campus. One Calendar. Zero <span className="font-bold text-white/70">FOMO</span>
-            </p>
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <a
+            </motion.p>
+            <motion.div
+              variants={fadeUp}
+              transition={{ type: "spring", bounce: 0.15, visualDuration: 0.6 }}
+              className="mt-10 flex flex-col gap-4 sm:flex-row"
+            >
+              <motion.a
                 href="#upcoming"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
                 className="flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-black transition-all hover:bg-white/90 hover:shadow-lg hover:shadow-white/20"
               >
                 Browse Events
                 <ArrowRight className="h-4 w-4" />
-              </a>
-              <Link
-                href="/clubs"
-                className="flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 px-8 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/10"
-              >
-                Explore Clubs
-              </Link>
-            </div>
-          </div>
+              </motion.a>
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+                <Link
+                  href="/clubs"
+                  className="flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 px-8 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/10"
+                >
+                  Explore Clubs
+                </Link>
+              </motion.div>
+            </motion.div>
+          </motion.div>
         </WebsiteShaderCanvas>
       </section>
 
       {/* Stats Bar */}
-      <section className="border-y border-white/10 bg-black/60 backdrop-blur-xl">
+      <motion.section
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.5 }}
+        className="border-y border-white/10 bg-black/60 backdrop-blur-xl"
+      >
         <div className="mx-auto grid max-w-6xl grid-cols-3 divide-x divide-white/10">
           {[
             { label: "Active Clubs", value: clubs.length.toString() },
@@ -81,22 +130,42 @@ export default function HomePage() {
             </div>
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* Upcoming Events */}
       <section id="upcoming" className="mx-auto max-w-6xl px-6 py-20">
-        <div className="mb-10 flex items-end justify-between">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-60px" }}
+          variants={stagger}
+          className="mb-10 flex items-end justify-between"
+        >
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-white">
+            <motion.h2
+              variants={fadeUp}
+              transition={{ type: "spring", bounce: 0.15, visualDuration: 0.5 }}
+              className="text-3xl font-bold tracking-tight text-white"
+            >
               Upcoming Events
-            </h2>
-            <p className="mt-2 text-white/50">
-              What's happening on campus this week
-            </p>
+            </motion.h2>
+            <motion.p
+              variants={fadeUp}
+              transition={{ type: "spring", bounce: 0.15, visualDuration: 0.5 }}
+              className="mt-2 text-white/50"
+            >
+              What&apos;s happening on campus this week
+            </motion.p>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-40px" }}
+          variants={stagger}
+          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+        >
           {upcomingEvents.map((event) => {
             const club = clubs.find((c) => c.slug === event.clubSlug);
             const fillPercent = Math.round(
@@ -106,9 +175,12 @@ export default function HomePage() {
             const hasRsvped = event.rsvps >= event.capacity;
 
             return (
-              <div
+              <motion.div
                 key={event.id}
-                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition-all hover:border-white/20 hover:bg-white/[0.06]"
+                variants={fadeUp}
+                transition={{ type: "spring", bounce: 0.12, visualDuration: 0.5 }}
+                whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-white/20 hover:bg-white/[0.06]"
               >
                 <div
                   className="absolute top-0 left-0 h-1 w-full opacity-60"
@@ -130,7 +202,7 @@ export default function HomePage() {
                   </span>
                 </div>
 
-                <h3 className="text-lg font-semibold text-white group-hover:text-emerald-300 transition-colors">
+                <h3 className="text-lg font-semibold text-white transition-colors group-hover:text-emerald-300">
                   {event.title}
                 </h3>
                 <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-white/50">
@@ -162,12 +234,13 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-5 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${fillPercent}%`,
-                      backgroundColor: club?.color ?? "#7bd8c4",
-                    }}
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ backgroundColor: club?.color ?? "#7bd8c4" }}
+                    initial={{ width: 0 }}
+                    whileInView={{ width: `${fillPercent}%` }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
                   />
                 </div>
 
@@ -184,57 +257,90 @@ export default function HomePage() {
                     {hasRsvped ? "Full" : "RSVP"}
                   </Link>
                 )}
-              </div>
+
+                {user?.role === "committee" && event.createdBy === user.id && (
+                  <Link
+                    href={`/events/${event.id}/edit`}
+                    className="mt-2 block w-full rounded-lg bg-emerald-500/10 py-2 text-center text-xs font-medium text-emerald-400 transition hover:bg-emerald-500/20"
+                  >
+                    Edit Event
+                  </Link>
+                )}
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </section>
 
       {/* Club Quick Links */}
       <section className="border-t border-white/10 bg-white/[0.02]">
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <h2 className="mb-8 text-3xl font-bold tracking-tight text-white">
+          <motion.h2
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px" }}
+            variants={fadeUp}
+            transition={{ type: "spring", bounce: 0.15, visualDuration: 0.5 }}
+            className="mb-8 text-3xl font-bold tracking-tight text-white"
+          >
             Browse by Club
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          </motion.h2>
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-40px" }}
+            variants={stagger}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          >
             {clubs.map((club) => {
               const eventCount = events.filter((e) => e.clubSlug === club.slug).length;
               return (
-                <Link
+                <motion.div
                   key={club.slug}
-                  href={`/clubs/${club.slug}`}
-                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 transition-all hover:scale-[1.02] hover:border-white/25"
+                  variants={fadeUp}
+                  transition={{ type: "spring", bounce: 0.12, visualDuration: 0.5 }}
                 >
-                  <div className="relative h-36 w-full overflow-hidden">
-                    <Image
-                      src={CLUB_IMAGES[club.slug] ?? ""}
-                      alt={club.name}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
-                  </div>
-                  <div className="relative z-10 -mt-8 flex flex-col px-5 pb-5">
-                    <h3 className="text-lg font-semibold text-white transition-colors group-hover:text-emerald-300">
-                      {club.name}
-                    </h3>
-                    <p className="mt-1 text-sm text-white/50">
-                      {club.tagline}
-                    </p>
-                    <div className="mt-3 text-xs text-white/30">
-                      {eventCount} event{eventCount !== 1 ? "s" : ""}
+                  <Link
+                    href={`/clubs/${club.slug}`}
+                    className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 transition-all hover:scale-[1.02] hover:border-white/25"
+                  >
+                    <div className="relative h-36 w-full overflow-hidden">
+                      <Image
+                        src={CLUB_IMAGES[club.slug] ?? ""}
+                        alt={club.name}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
                     </div>
-                  </div>
-                </Link>
+                    <div className="relative z-10 -mt-8 flex flex-col px-5 pb-5">
+                      <h3 className="text-lg font-semibold text-white transition-colors group-hover:text-emerald-300">
+                        {club.name}
+                      </h3>
+                      <p className="mt-1 text-sm text-white/50">
+                        {club.tagline}
+                      </p>
+                      <div className="mt-3 text-xs text-white/30">
+                        {eventCount} event{eventCount !== 1 ? "s" : ""}
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Footer CTA */}
-      <section className="relative overflow-hidden border-t border-white/10">
+      <motion.section
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.6 }}
+        className="relative overflow-hidden border-t border-white/10"
+      >
         <SonarGrid
           className="bg-background flex h-[320px] w-full flex-col"
           color="#7bd8c4"
@@ -247,20 +353,40 @@ export default function HomePage() {
           baseOpacity={0.28}
           pingArea={[0.22, 0.18, 0.78, 0.82]}
         >
-          <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-            <h2 className="text-3xl font-bold text-white sm:text-4xl">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={stagger}
+            className="flex h-full flex-col items-center justify-center px-6 text-center"
+          >
+            <motion.h2
+              variants={fadeUp}
+              transition={{ type: "spring", bounce: 0.15, visualDuration: 0.5 }}
+              className="text-3xl font-bold text-white sm:text-4xl"
+            >
               Never miss a campus event again
-            </h2>
-            <p className="mt-3 max-w-md text-white/50">
+            </motion.h2>
+            <motion.p
+              variants={fadeUp}
+              transition={{ type: "spring", bounce: 0.15, visualDuration: 0.5 }}
+              className="mt-3 max-w-md text-white/50"
+            >
               One calendar. Every club. Automatic reminders delivered to your
               inbox every Monday.
-            </p>
-            <button className="mt-8 rounded-full bg-white px-8 py-3 text-sm font-semibold text-black transition-all hover:bg-white/90 hover:shadow-lg hover:shadow-white/20">
+            </motion.p>
+            <motion.button
+              variants={fadeUp}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", bounce: 0.2, visualDuration: 0.4 }}
+              className="mt-8 rounded-full bg-white px-8 py-3 text-sm font-semibold text-black transition-all hover:bg-white/90 hover:shadow-lg hover:shadow-white/20"
+            >
               Get Weekly Digest
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         </SonarGrid>
-      </section>
+      </motion.section>
     </div>
   );
 }

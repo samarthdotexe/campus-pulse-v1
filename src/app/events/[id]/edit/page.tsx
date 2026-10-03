@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAuth } from "@/components/auth-context";
+import Link from "next/link";
 import { getEvents, updateEvent } from "@/lib/store";
 import { clubs, RsvpQuestion } from "@/lib/data";
+import { useAuth } from "@/components/auth-context";
 import { X } from "lucide-react";
+import { motion } from "motion/react";
 
 export default function EditEventPage() {
   const params = useParams<{ id: string }>();
@@ -14,38 +16,26 @@ export default function EditEventPage() {
   const events = getEvents();
   const event = events.find((e) => e.id === params.id);
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [location, setLocation] = useState("");
-  const [capacity, setCapacity] = useState("");
-  const [questions, setQuestions] = useState<RsvpQuestion[]>([]);
+  const isOwner = user?.role === "admin" || (user?.role === "committee" && !!event && (event.createdBy === user.id || event.clubSlug === user.clubSlug));
+  const [title, setTitle] = useState(event?.title ?? "");
+  const [description, setDescription] = useState(event?.description ?? "");
+  const [date, setDate] = useState(event?.date ?? "");
+  const [time, setTime] = useState(event?.time ?? "");
+  const [location, setLocation] = useState(event?.location ?? "");
+  const [capacity, setCapacity] = useState(event?.capacity.toString() ?? "");
+  const [questions, setQuestions] = useState<RsvpQuestion[]>(event?.rsvpQuestions ?? []);
   const [showQForm, setShowQForm] = useState(false);
   const [qLabel, setQLabel] = useState("");
   const [qType, setQType] = useState<RsvpQuestion["type"]>("text");
   const [qRequired, setQRequired] = useState(false);
   const [qOptions, setQOptions] = useState("");
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!event || !user || user.role !== "committee" || event.createdBy !== user.id) {
-      router.replace("/login");
-      return;
-    }
-    setTitle(event.title);
-    setDescription(event.description);
-    setDate(event.date);
-    setTime(event.time);
-    setLocation(event.location);
-    setCapacity(String(event.capacity));
-    setQuestions(event.rsvpQuestions || []);
-    setReady(true);
-  }, [event, user, router]);
+    if (user && user.role !== "committee" && user.role !== "admin") router.replace("/login");
+  }, [user, router]);
 
-  if (!ready || !event || !user) return null;
-
-  const club = clubs.find((c) => c.slug === user.clubSlug);
+  if (!event || !isOwner) return null;
+  const club = clubs.find((c) => c.slug === event.clubSlug);
 
   const addQuestion = () => {
     if (!qLabel.trim()) return;
@@ -64,7 +54,17 @@ export default function EditEventPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateEvent({ ...event, title, description, date, time, location, capacity: Number(capacity), rsvpQuestions: questions });
+    const updatedEvent = {
+      ...event,
+      title,
+      description,
+      date,
+      time,
+      location,
+      capacity: Number(capacity),
+      rsvpQuestions: questions,
+    };
+    updateEvent(updatedEvent);
     router.push(`/events/${event.id}`);
   };
 
@@ -72,8 +72,16 @@ export default function EditEventPage() {
   const labelCls = "block text-sm font-medium text-white/60 mb-1.5";
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
-      <h1 className="mb-8 text-3xl font-bold tracking-tight text-white">Edit Event</h1>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", bounce: 0.12, visualDuration: 0.5 }}
+      className="mx-auto max-w-2xl px-6 py-10"
+    >
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight text-white">Edit Event</h1>
+        <Link href={`/events/${event.id}`}><button className="rounded-lg border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white transition hover:bg-white/10">Cancel</button></Link>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
         <div>
@@ -111,6 +119,7 @@ export default function EditEventPage() {
           </div>
         </div>
 
+        {/* RSVP Questions */}
         <div className="border-t border-white/10 pt-5 mt-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-white">RSVP Form Builder</h2>
@@ -159,10 +168,25 @@ export default function EditEventPage() {
           )}
         </div>
 
-        <button type="submit" className="mt-4 w-full rounded-xl bg-white py-3 text-sm font-semibold text-black transition hover:bg-white/90">
-          Save Changes
-        </button>
+        <motion.div className="flex gap-3">
+          <motion.button
+            type="submit"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 text-sm font-semibold text-black transition hover:from-emerald-400 hover:to-teal-400"
+          >
+            Save Changes
+          </motion.button>
+
+          <Link href={`/events/${event.id}`}><motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="rounded-xl border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">View</motion.button></Link>
+        </motion.div>
       </form>
-    </div>
+
+      <div className="mt-8 rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+        <p className="text-sm text-red-300">
+          <span className="font-semibold">Note:</span> Any changes you make will be saved immediately and reflected on the event page. RSVPs are not affected.
+        </p>
+      </div>
+    </motion.div>
   );
 }
