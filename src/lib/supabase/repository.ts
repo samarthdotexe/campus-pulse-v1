@@ -41,6 +41,7 @@ type ClubRecord = {
 type ProfileRecord = {
   id: string;
   name: string;
+  username: string | null;
   role: UserRole;
   club_slug: string | null;
   avatar_path: string | null;
@@ -49,6 +50,26 @@ type ProfileRecord = {
 export type EventInput = Omit<CampusEvent, "id" | "rsvps" | "createdBy">;
 export type ClubInput = Club;
 export type OrganizerRsvp = RsvpSubmission & { participantName: string };
+export type AccessAccount = {
+  id: string; name: string; username: string | null; email: string; role: UserRole; clubSlug: string | null;
+  canCreateEvents: boolean; canEditEvents: boolean; canManageRsvps: boolean; canEditClub: boolean; isOwner: boolean;
+};
+
+export function mapAccessAccount(row: Record<string, unknown>): AccessAccount {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    username: row.username as string | null,
+    email: row.email as string,
+    role: row.role as UserRole,
+    clubSlug: row.club_slug as string | null,
+    canCreateEvents: Boolean(row.can_create_events),
+    canEditEvents: Boolean(row.can_edit_events),
+    canManageRsvps: Boolean(row.can_manage_rsvps),
+    canEditClub: Boolean(row.can_edit_club),
+    isOwner: Boolean(row.is_owner),
+  };
+}
 type OrganizerRsvpRecord = {
   id: string;
   event_id: string;
@@ -129,6 +150,7 @@ export function mapProfileRecord(record: ProfileRecord, email: string): User {
     name: record.name,
     email,
     role: record.role,
+    ...(record.username ? { username: record.username } : {}),
     ...(record.club_slug ? { clubSlug: record.club_slug } : {}),
     ...(record.avatar_path ? { avatarPath: record.avatar_path } : {}),
   };
@@ -154,6 +176,7 @@ function questionInsertRows(eventId: string, questions: RsvpQuestion[]) {
 function databaseError(error: { message: string; code?: string } | null): never {
   if (!error) throw new Error("Supabase did not return data for this request.");
   if (error.code === "42703") throw new Error("Your Supabase database needs the shared-event migration applied before this page can load.");
+  if (error.code === "42883" && error.message.includes("access")) throw new Error("Your Supabase database needs the Club Member permissions migration applied before this page can load.");
   throw new Error(error.message);
 }
 
@@ -176,6 +199,30 @@ export async function getCurrentProfile(id: string, email: string): Promise<User
   const { data, error } = await createClient().from("profiles").select("id, name, username, role, club_slug, avatar_path").eq("id", id).maybeSingle();
   if (error) databaseError(error);
   return data ? mapProfileRecord(data as ProfileRecord, email) : null;
+}
+
+export async function listAccessAccounts(): Promise<AccessAccount[]> {
+  const { data, error } = await createClient().rpc("list_access_accounts");
+  if (error) databaseError(error);
+  return ((data ?? []) as Array<Record<string, unknown>>).map(mapAccessAccount);
+}
+
+export async function saveClubMemberAccess(account: AccessAccount, clubSlug: string, permissions: Pick<AccessAccount, "canCreateEvents" | "canEditEvents" | "canManageRsvps" | "canEditClub">): Promise<void> {
+  const { error } = await createClient().rpc("save_club_member_access", {
+    p_user_id: account.id, p_club_slug: clubSlug, p_can_create_events: permissions.canCreateEvents,
+    p_can_edit_events: permissions.canEditEvents, p_can_manage_rsvps: permissions.canManageRsvps, p_can_edit_club: permissions.canEditClub,
+  });
+  if (error) databaseError(error);
+}
+
+export async function removeClubMember(userId: string): Promise<void> {
+  const { error } = await createClient().rpc("remove_club_member", { p_user_id: userId });
+  if (error) databaseError(error);
+}
+
+export async function setFacultyAdminRole(userId: string, makeAdmin: boolean): Promise<void> {
+  const { error } = await createClient().rpc("set_faculty_admin_role", { p_user_id: userId, p_make_admin: makeAdmin });
+  if (error) databaseError(error);
 }
 
 export async function listMyRsvps(userId: string): Promise<RsvpSubmission[]> {

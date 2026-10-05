@@ -6,18 +6,21 @@ import { Camera, Mail, ShieldCheck, UserRound } from "lucide-react";
 import { motion } from "motion/react";
 import { useAuth } from "@/components/auth-context";
 import { WebsiteShaderCanvas } from "@/components/ui/shader-aurora-veil";
+import { ProfilePhotoEditor } from "@/components/profile-photo-editor";
 import { getAvatarUrl, getMyRoleRequest, updateProfile, uploadAvatar, type RoleRequest } from "@/lib/supabase/auth";
 
 const roleLabel = { participant: "Club Participant", committee: "Club Member", admin: "Faculty Member / Admin" } as const;
 
 export default function AccountPage() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, refreshUser } = useAuth();
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [roleRequest, setRoleRequest] = useState<RoleRequest | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState("");
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
+  const [photoSaving, setPhotoSaving] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -27,19 +30,31 @@ export default function AccountPage() {
     return () => cancelAnimationFrame(nameFrame);
   }, [user]);
 
-  const handlePhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhoto = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = "";
     if (!file || !user) return;
+    if (!file.type.startsWith("image/")) { setError("Choose an image file for your profile photo."); return; }
+    setPendingPhoto(file);
+  };
+
+  const savePhoto = async (file: File) => {
+    if (!user) return;
+    setPhotoSaving(true);
     setStatus("saving");
     setError("");
     try {
       const avatarPath = await uploadAvatar(file, user.id);
       const updated = await updateProfile(name, username, avatarPath);
       setAvatarUrl(await getAvatarUrl(updated.avatarPath ?? avatarPath));
+      await refreshUser();
+      setPendingPhoto(null);
       setStatus("saved");
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "We couldn’t update your photo.");
       setStatus("error");
+    } finally {
+      setPhotoSaving(false);
     }
   };
 
@@ -51,6 +66,8 @@ export default function AccountPage() {
     try {
       const updated = await updateProfile(name, username, user.avatarPath ?? null);
       setName(updated.name);
+      setUsername(updated.username ?? "");
+      await refreshUser();
       setStatus("saved");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "We couldn’t save your profile.");
@@ -65,8 +82,8 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="relative min-h-[calc(100dvh-4rem)]">
-      <WebsiteShaderCanvas preset="aurora-veil" tone="dark" className="absolute inset-0 h-full w-full">
+    <div className="relative">
+      <WebsiteShaderCanvas preset="aurora-veil" tone="dark" className="min-h-[calc(100dvh-4rem)] w-full">
         <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-16">
           <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-white/10 bg-black/45 p-4 backdrop-blur-xl sm:p-7">
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-300">Your account</p>
@@ -74,7 +91,7 @@ export default function AccountPage() {
             <p className="mt-2 text-sm leading-relaxed text-white/55">Update how fellow campus members see you, or check the account details currently in use.</p>
 
             <section className="mt-8 flex flex-col items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center sm:flex-row sm:text-left">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-emerald-400/25 bg-emerald-400/10 text-2xl font-semibold text-emerald-200">{avatarUrl ? <img src={avatarUrl} alt="Your profile" className="h-full w-full object-cover" /> : user.name.slice(0, 1).toUpperCase()}</div>
+              <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-emerald-400/25 bg-emerald-400/10 text-2xl font-semibold text-emerald-200">{avatarUrl ? <img src={avatarUrl} alt="Your profile" className="h-full w-full object-cover transition-opacity duration-300" /> : user.name.slice(0, 1).toUpperCase()}{photoSaving && <span className="absolute inset-0 animate-pulse bg-black/45" aria-label="Saving profile photo" />}</div>
               <div className="min-w-0 flex-1"><h2 className="font-semibold text-white">Profile photo</h2><p className="mt-1 text-sm text-white/50">PNG, JPG, or WebP up to 2 MB.</p></div>
               <label className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-sm font-medium text-emerald-100 hover:bg-emerald-400/15"><Camera className="h-4 w-4" /> Change photo<input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={handlePhoto} /></label>
             </section>
@@ -98,6 +115,7 @@ export default function AccountPage() {
           </motion.div>
         </main>
       </WebsiteShaderCanvas>
+      {pendingPhoto && <ProfilePhotoEditor file={pendingPhoto} onCancel={() => setPendingPhoto(null)} onSave={savePhoto} />}
     </div>
   );
 }

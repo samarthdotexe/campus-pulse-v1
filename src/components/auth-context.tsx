@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import { User } from "@/lib/data";
 import { isApprovalAdmin, signInWithPassword, signUpWithPassword, SignUpInput } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/client";
@@ -13,6 +13,7 @@ interface AuthContextValue {
   canApproveRoleRequests: boolean;
   signUp: (input: SignUpInput) => Promise<{ requiresEmailConfirmation: boolean }>;
   signIn: (email: string, password: string) => Promise<void>;
+  refreshUser: () => Promise<User | null>;
   logout: () => Promise<void>;
 }
 
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextValue>({
   canApproveRoleRequests: false,
   signUp: async () => ({ requiresEmailConfirmation: false }),
   signIn: async () => {},
+  refreshUser: async () => null,
   logout: async () => {},
 });
 
@@ -31,6 +33,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [canApproveRoleRequests, setCanApproveRoleRequests] = useState(false);
+
+  const refreshUser = useCallback(async () => {
+    const client = createClient();
+    const { data: { user: authUser }, error: authError } = await client.auth.getUser();
+    if (authError) throw authError;
+    if (!authUser?.email) {
+      setUser(null);
+      setCanApproveRoleRequests(false);
+      return null;
+    }
+    const profile = await getCurrentProfile(authUser.id, authUser.email);
+    setUser(profile);
+    setCanApproveRoleRequests(await isApprovalAdmin().catch(() => false));
+    return profile;
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -120,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, canApproveRoleRequests, signUp, signIn, logout }}>
+    <AuthContext.Provider value={{ user, loading, error, canApproveRoleRequests, signUp, signIn, refreshUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

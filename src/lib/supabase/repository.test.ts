@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapEventRecord } from "./repository";
+import { mapAccessAccount, mapEventRecord, mapProfileRecord } from "./repository";
 
 describe("mapEventRecord", () => {
   it("preserves the local event date and time from a timestamp", () => {
@@ -51,5 +51,43 @@ describe("mapEventRecord", () => {
       clubs: null,
       rsvp_questions: [],
     })).toThrow("club");
+  });
+});
+
+describe("mapAccessAccount", () => {
+  it("maps database permission columns into the access-management model", () => {
+    expect(mapAccessAccount({
+      id: "d2e13c35-68e7-465a-9dbf-7e1f2b9ab843",
+      name: "Taylor",
+      username: "taylor_dev",
+      email: "taylor@example.edu",
+      role: "committee",
+      club_slug: "tech-club",
+      can_create_events: true,
+      can_edit_events: false,
+      can_manage_rsvps: true,
+      can_edit_club: false,
+      is_owner: false,
+    })).toEqual(expect.objectContaining({
+      clubSlug: "tech-club",
+      canCreateEvents: true,
+      canEditEvents: false,
+      canManageRsvps: true,
+      canEditClub: false,
+      isOwner: false,
+    }));
+  });
+});
+
+describe("mapProfileRecord", () => {
+  it("keeps a saved username when the authenticated profile is reloaded", () => {
+    expect(mapProfileRecord({
+      id: "d2e13c35-68e7-465a-9dbf-7e1f2b9ab843",
+      name: "Samarth Rathod",
+      username: "samarthdotexe",
+      role: "admin",
+      club_slug: null,
+      avatar_path: null,
+    }, "samarth@example.edu")).toMatchObject({ username: "samarthdotexe" });
   });
 });
