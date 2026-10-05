@@ -64,8 +64,8 @@ export default function HomePage() {
               Campus <span className="text-[#1de9b6]">Pulse</span>
             </motion.h1>
             <motion.div variants={fadeUp} className="mt-4 h-[3px] w-[120px] rounded-full bg-gradient-to-r from-emerald-400 to-teal-300" />
-            <motion.p variants={fadeUp} transition={{ type: "spring", bounce: 0.15, visualDuration: 0.6 }} className="mt-7 max-w-4xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
-              Everything happening on campus <span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">in one place</span>
+            <motion.p variants={fadeUp} transition={{ type: "spring", bounce: 0.15, visualDuration: 0.6 }} className="mt-7 max-w-5xl text-5xl font-bold leading-[1.08] tracking-tight text-white sm:text-6xl lg:text-7xl">
+              Everything happening on campus, <span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">in one place</span>
             </motion.p>
             <motion.p
               variants={fadeUp}

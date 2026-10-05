@@ -8,6 +8,7 @@ import { useAuth } from "@/components/auth-context";
 import { type Club, UserRole } from "@/lib/data";
 import { listClubs } from "@/lib/supabase/repository";
 import { motion, AnimatePresence } from "motion/react";
+import { Eye, EyeOff } from "lucide-react";
 
 const roles: { value: UserRole; title: string; description: string }[] = [
   { value: "participant", title: "Club Participant", description: "Discover events and RSVP." },
@@ -23,6 +24,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [clubOptions, setClubOptions] = useState<Club[]>([]);
   const [clubSlug, setClubSlug] = useState("");
   const [error, setError] = useState("");
@@ -54,8 +57,8 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)]">
-      <WebsiteShaderCanvas preset="aurora-veil" tone="dark" className="absolute inset-0 h-full w-full">
+    <div className="relative">
+      <WebsiteShaderCanvas preset="aurora-veil" tone="dark" className="min-h-[calc(100vh-4rem)] w-full">
         <div className="flex min-h-[calc(100dvh-4rem)] items-center justify-center px-4 py-12 sm:px-6 sm:py-20">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", bounce: 0.15, visualDuration: 0.5 }} className="w-full max-w-2xl">
             <h1 className="text-center text-3xl font-bold tracking-tight text-white">Create your account</h1><p className="mt-2 text-center text-sm text-white/50">Choose how you’ll use Campus Pulse.</p>
@@ -68,8 +71,8 @@ export default function SignupPage() {
                 <div><label className="mb-1.5 block text-sm font-medium text-white/70">Name</label><input required autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Your name" className="w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 text-base text-white placeholder-white/30 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50" /></div>
                 <div><label className="mb-1.5 block text-sm font-medium text-white/70">Campus email</label><input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@campus.edu" className="w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 text-base text-white placeholder-white/30 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50" /></div>
                 {role === "committee" && <div><label className="mb-1.5 block text-sm font-medium text-white/70">Club you want to represent</label><select required value={clubSlug} onChange={(event) => setClubSlug(event.target.value)} disabled={!clubOptions.length} className="w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 text-base text-white outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 disabled:cursor-not-allowed disabled:opacity-60"><option value="" className="bg-black">{clubOptions.length ? "Choose a club" : "No clubs available"}</option>{clubOptions.map((club) => <option key={club.slug} value={club.slug} className="bg-black">{club.name}</option>)}</select></div>}
-                <div><label className="mb-1.5 block text-sm font-medium text-white/70">Password</label><input type="password" required minLength={8} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" className="w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 text-base text-white placeholder-white/30 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50" /></div>
-                <div><label className="mb-1.5 block text-sm font-medium text-white/70">Confirm password</label><input type="password" required minLength={8} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your password" className="w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 text-base text-white placeholder-white/30 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50" /></div>
+                <div><label className="mb-1.5 block text-sm font-medium text-white/70">Password</label><div className="relative"><input type={showPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" className="w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 pr-12 text-base text-white placeholder-white/30 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50" /><button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-white/45 transition hover:text-white focus:outline-none focus-visible:text-emerald-300">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></div>
+                <div><label className="mb-1.5 block text-sm font-medium text-white/70">Confirm password</label><div className="relative"><input type={showConfirmPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your password" className="w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 pr-12 text-base text-white placeholder-white/30 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50" /><button type="button" onClick={() => setShowConfirmPassword((visible) => !visible)} aria-label={showConfirmPassword ? "Hide confirmation password" : "Show confirmation password"} aria-pressed={showConfirmPassword} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-white/45 transition hover:text-white focus:outline-none focus-visible:text-emerald-300">{showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></div>
                 <motion.button type="submit" disabled={submitting} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.97 }} className="w-full rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 text-sm font-semibold text-black transition-all hover:from-emerald-400 hover:to-teal-400 disabled:cursor-not-allowed disabled:opacity-60">{submitting ? "Creating account…" : "Create account"}</motion.button>
               </motion.form>}
             </AnimatePresence>
