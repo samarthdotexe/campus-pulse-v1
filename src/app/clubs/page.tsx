@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { SonarGrid } from "@/components/ui/sonar-grid";
-import { getClubs, getEvents } from "@/lib/store";
+import { useCampusData } from "@/components/campus-data-context";
 import { Users, Calendar, ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -16,8 +16,7 @@ const stagger = {
 };
 
 export default function ClubsPage() {
-  const clubs = getClubs();
-  const events = getEvents();
+  const { clubs, events, error } = useCampusData();
 
   return (
     <div className="relative min-h-screen">
@@ -38,7 +37,7 @@ export default function ClubsPage() {
             initial="hidden"
             animate="visible"
             variants={stagger}
-            className="flex h-full flex-col items-center justify-center px-6 text-center"
+            className="flex h-full flex-col items-center justify-center px-4 text-center sm:px-6"
           >
             <motion.h1
               variants={fadeUp}
@@ -59,7 +58,8 @@ export default function ClubsPage() {
         </SonarGrid>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        {error && <p className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p>}
         <motion.div
           initial="hidden"
           whileInView="visible"

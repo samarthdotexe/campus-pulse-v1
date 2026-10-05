@@ -70,7 +70,10 @@ export function SonarGrid({
 
   // The render loop reads props through this ref so knob changes apply live without restarting it.
   const opts = React.useRef({ spacing, dotRadius, baseOpacity, pingEvery, speed, ringWidth, amplitude, interactive, maxRings, seedPing, pingArea })
-  opts.current = { spacing, dotRadius, baseOpacity, pingEvery, speed, ringWidth, amplitude, interactive, maxRings, seedPing, pingArea }
+
+  React.useEffect(() => {
+    opts.current = { spacing, dotRadius, baseOpacity, pingEvery, speed, ringWidth, amplitude, interactive, maxRings, seedPing, pingArea }
+  }, [spacing, dotRadius, baseOpacity, pingEvery, speed, ringWidth, amplitude, interactive, maxRings, seedPing, pingArea])
 
   const setHost = React.useCallback(
     (node: HTMLDivElement | null) => {

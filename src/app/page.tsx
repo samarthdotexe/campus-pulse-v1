@@ -4,8 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { WebsiteShaderCanvas } from "@/components/ui/shader-aurora-veil";
 import { SonarGrid } from "@/components/ui/sonar-grid";
-import { getEvents, getClubs } from "@/lib/store";
 import { useAuth } from "@/components/auth-context";
+import { useCampusData } from "@/components/campus-data-context";
 import { Calendar, MapPin, Users, ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -29,8 +29,7 @@ const stagger = {
 
 export default function HomePage() {
   const { user } = useAuth();
-  const clubs = getClubs();
-  const events = getEvents();
+  const { clubs, events, error } = useCampusData();
   const upcomingEvents = [...events].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
@@ -48,7 +47,7 @@ export default function HomePage() {
             initial="hidden"
             animate="visible"
             variants={stagger}
-            className="flex h-full flex-col items-center justify-center px-6 text-center"
+            className="flex h-full flex-col items-center justify-center px-4 text-center sm:px-6"
           >
             <motion.p
               variants={fadeUp}
@@ -110,6 +109,8 @@ export default function HomePage() {
         </WebsiteShaderCanvas>
       </section>
 
+      {error && <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6"><p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p></div>}
+
       {/* Stats Bar */}
       <motion.section
         initial={{ opacity: 0 }}
@@ -118,13 +119,13 @@ export default function HomePage() {
         transition={{ duration: 0.5 }}
         className="border-y border-white/10 bg-black/60 backdrop-blur-xl"
       >
-        <div className="mx-auto grid max-w-6xl grid-cols-3 divide-x divide-white/10">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 divide-y divide-white/10 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           {[
             { label: "Active Clubs", value: clubs.length.toString() },
             { label: "Upcoming Events", value: events.length.toString() },
             { label: "Total RSVPs", value: events.reduce((sum, e) => sum + e.rsvps, 0).toLocaleString() },
           ].map((stat) => (
-            <div key={stat.label} className="px-6 py-8 text-center">
+            <div key={stat.label} className="px-4 py-6 text-center sm:px-6 sm:py-8">
               <div className="text-3xl font-bold text-white">{stat.value}</div>
               <div className="mt-1 text-sm text-white/50">{stat.label}</div>
             </div>
@@ -133,7 +134,7 @@ export default function HomePage() {
       </motion.section>
 
       {/* Upcoming Events */}
-      <section id="upcoming" className="mx-auto max-w-6xl px-6 py-20">
+      <section id="upcoming" className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -274,7 +275,7 @@ export default function HomePage() {
 
       {/* Club Quick Links */}
       <section className="border-t border-white/10 bg-white/[0.02]">
-        <div className="mx-auto max-w-6xl px-6 py-20">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
           <motion.h2
             initial="hidden"
             whileInView="visible"

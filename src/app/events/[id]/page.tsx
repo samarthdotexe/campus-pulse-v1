@@ -1,23 +1,22 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getEvents, deleteEvent } from "@/lib/store";
-import { clubs } from "@/lib/data";
 import { useAuth } from "@/components/auth-context";
+import { useCampusData } from "@/components/campus-data-context";
 import { Calendar, MapPin, Users } from "lucide-react";
 import { motion } from "motion/react";
 
 export default function EventDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const { user } = useAuth();
-  const events = getEvents();
+  const { events, clubs, loading } = useCampusData();
   const event = events.find((e) => e.id === params.id);
 
+  if (loading) return <div className="mx-auto max-w-3xl px-4 py-20 text-center text-white/50 sm:px-6">Loading event…</div>;
   if (!event) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-20 text-center">
+      <div className="mx-auto max-w-3xl px-4 py-20 text-center sm:px-6">
         <h1 className="text-2xl font-bold text-white">Event not found</h1>
         <Link href="/calendar" className="mt-4 inline-block text-sm text-emerald-400 hover:underline">Back to calendar</Link>
       </div>
@@ -28,20 +27,13 @@ export default function EventDetailPage() {
   const fillPercent = Math.round((event.rsvps / event.capacity) * 100);
   const isOwner = user?.role === "admin" || (user?.role === "committee" && (event.createdBy === user.id || event.clubSlug === user.clubSlug));
 
-  const handleDelete = () => {
-    if (confirm("Delete this event?")) {
-      deleteEvent(event.id);
-      router.push("/calendar");
-    }
-  };
-
   return (
-    <div className="mx-auto max-w-3xl px-6 py-10">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", bounce: 0.12, visualDuration: 0.5 }}
-        className="rounded-2xl border border-white/10 bg-white/[0.03] p-8"
+        className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-8"
       >
         <div className="mb-6 flex items-start justify-between">
           <span
@@ -122,14 +114,6 @@ export default function EventDetailPage() {
                   Edit
                 </Link>
               </motion.div>
-              <motion.button
-                onClick={handleDelete}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="rounded-full bg-red-500/10 px-6 py-2.5 text-sm font-medium text-red-400 transition hover:bg-red-500/20"
-              >
-                Delete
-              </motion.button>
             </>
           )}
         </motion.div>

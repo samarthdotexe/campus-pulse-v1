@@ -4,8 +4,8 @@ import { use } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { WebsiteShaderCanvas } from "@/components/ui/shader-aurora-veil";
-import { getClubs, getEvents } from "@/lib/store";
 import { useAuth } from "@/components/auth-context";
+import { useCampusData } from "@/components/campus-data-context";
 import { Calendar, MapPin, Users, ArrowLeft } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -25,10 +25,10 @@ export default function ClubPage({
 }) {
   const { clubSlug } = use(params);
   const { user } = useAuth();
-  const clubs = getClubs();
-  const events = getEvents();
+  const { clubs, events, loading } = useCampusData();
   const club = clubs.find((c) => c.slug === clubSlug);
 
+  if (loading) return <div className="mx-auto max-w-6xl px-4 py-20 text-center text-white/50 sm:px-6">Loading club…</div>;
   if (!club) notFound();
 
   const clubEvents = events
@@ -47,7 +47,7 @@ export default function ClubPage({
             initial="hidden"
             animate="visible"
             variants={stagger}
-            className="flex h-full flex-col items-start justify-end px-6 pb-12"
+            className="flex h-full flex-col items-start justify-end px-4 pb-10 sm:px-6 sm:pb-12"
           >
             <div className="mx-auto w-full max-w-6xl">
               <motion.div variants={fadeUp} transition={{ type: "spring", bounce: 0.15, visualDuration: 0.5 }}>
@@ -60,7 +60,7 @@ export default function ClubPage({
                 </Link>
               </motion.div>
 
-              <motion.div variants={fadeUp} transition={{ type: "spring", bounce: 0.15, visualDuration: 0.6 }} className="flex items-end gap-6">
+              <motion.div variants={fadeUp} transition={{ type: "spring", bounce: 0.15, visualDuration: 0.6 }} className="flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:gap-6">
                 {club.logo ? <img src={club.logo} alt={`${club.name} logo`} className="h-20 w-20 shrink-0 rounded-2xl object-cover shadow-2xl" /> : <div
                   className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl text-3xl font-bold shadow-2xl"
                   style={{
@@ -92,7 +92,7 @@ export default function ClubPage({
         </WebsiteShaderCanvas>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-12">
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
         <div className="grid gap-12 lg:grid-cols-[1fr_2fr]">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -104,7 +104,7 @@ export default function ClubPage({
                 {club.description}
               </p>
 
-              <div className="mt-6 grid grid-cols-2 gap-3">
+              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-center">
                   <div className="text-2xl font-bold text-white">
                     {club.memberCount}

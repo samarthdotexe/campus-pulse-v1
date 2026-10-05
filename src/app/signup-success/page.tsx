@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { WebsiteShaderCanvas } from "@/components/ui/shader-aurora-veil";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 
-export default function SignupSuccessPage() {
+function SignupSuccessContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const hasPendingRoleRequest = searchParams.get("pending") === "role";
 
   // Auto-redirect after 2 seconds
   useEffect(() => {
@@ -18,13 +20,13 @@ export default function SignupSuccessPage() {
   }, [router]);
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)]">
+    <div className="relative min-h-[calc(100dvh-4rem)]">
       <WebsiteShaderCanvas
         preset="aurora-veil"
         tone="dark"
         className="absolute inset-0 h-full w-full"
       >
-        <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-6 py-20">
+        <div className="flex min-h-[calc(100dvh-4rem)] flex-col items-center justify-center px-4 py-12 sm:px-6 sm:py-20">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -86,7 +88,7 @@ export default function SignupSuccessPage() {
                 transition={{ delay: 0.6, type: "spring", bounce: 0.3 }}
                 className="text-white/50 mb-8"
               >
-                Welcome to Campus Pulse! You're all set to explore events and connect with your community.
+                {hasPendingRoleRequest ? "Your organizer access request is waiting for approval. You can still explore events as a Club Participant." : "Check your inbox if email confirmation is enabled, then explore events and connect with your community."}
               </motion.p>
 
               {/* Navigation Buttons */}
@@ -140,4 +142,8 @@ export default function SignupSuccessPage() {
       </WebsiteShaderCanvas>
     </div>
   );
+}
+
+export default function SignupSuccessPage() {
+  return <Suspense fallback={<div className="min-h-[calc(100dvh-4rem)] bg-black" />}><SignupSuccessContent /></Suspense>;
 }

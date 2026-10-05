@@ -3,24 +3,31 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getEvents, updateEvent } from "@/lib/store";
-import { clubs, RsvpQuestion } from "@/lib/data";
+import { RsvpQuestion } from "@/lib/data";
 import { useAuth } from "@/components/auth-context";
+import { useCampusData } from "@/components/campus-data-context";
 import { X } from "lucide-react";
 import { motion } from "motion/react";
+
+function toTimeInput(value: string): string {
+  const match = value.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!match) return value;
+  const hour = Number(match[1]) % 12 + (match[3].toUpperCase() === "PM" ? 12 : 0);
+  return `${String(hour).padStart(2, "0")}:${match[2]}`;
+}
 
 export default function EditEventPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
-  const events = getEvents();
+  const { events, clubs, updateEvent, loading } = useCampusData();
   const event = events.find((e) => e.id === params.id);
 
   const isOwner = user?.role === "admin" || (user?.role === "committee" && !!event && (event.createdBy === user.id || event.clubSlug === user.clubSlug));
   const [title, setTitle] = useState(event?.title ?? "");
   const [description, setDescription] = useState(event?.description ?? "");
   const [date, setDate] = useState(event?.date ?? "");
-  const [time, setTime] = useState(event?.time ?? "");
+  const [time, setTime] = useState(event ? toTimeInput(event.time) : "");
   const [location, setLocation] = useState(event?.location ?? "");
   const [capacity, setCapacity] = useState(event?.capacity.toString() ?? "");
   const [questions, setQuestions] = useState<RsvpQuestion[]>(event?.rsvpQuestions ?? []);
@@ -29,11 +36,28 @@ export default function EditEventPage() {
   const [qType, setQType] = useState<RsvpQuestion["type"]>("text");
   const [qRequired, setQRequired] = useState(false);
   const [qOptions, setQOptions] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (user && user.role !== "committee" && user.role !== "admin") router.replace("/login");
   }, [user, router]);
 
+  useEffect(() => {
+    if (!event) return;
+    const initializeForm = window.setTimeout(() => {
+      setTitle(event.title);
+      setDescription(event.description);
+      setDate(event.date);
+      setTime(toTimeInput(event.time));
+      setLocation(event.location);
+      setCapacity(event.capacity.toString());
+      setQuestions(event.rsvpQuestions);
+    }, 0);
+    return () => window.clearTimeout(initializeForm);
+  }, [event]);
+
+  if (loading) return <div className="mx-auto max-w-2xl px-6 py-20 text-center text-white/50">Loading event…</div>;
   if (!event || !isOwner) return null;
   const club = clubs.find((c) => c.slug === event.clubSlug);
 
@@ -52,10 +76,12 @@ export default function EditEventPage() {
 
   const removeQuestion = (id: string) => setQuestions(questions.filter((q) => q.id !== id));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const updatedEvent = {
-      ...event,
+    setError("");
+    setSaving(true);
+    try {
+      await updateEvent(event.id, {
       title,
       description,
       date,
@@ -63,12 +89,17 @@ export default function EditEventPage() {
       location,
       capacity: Number(capacity),
       rsvpQuestions: questions,
-    };
-    updateEvent(updatedEvent);
-    router.push(`/events/${event.id}`);
+      clubSlug: event.clubSlug,
+      });
+      router.push(`/events/${event.id}`);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Unable to save the event.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const inputCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none transition focus:border-white/25 focus:bg-white/[0.07]";
+  const inputCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white placeholder-white/30 outline-none transition focus:border-white/25 focus:bg-white/[0.07]";
   const labelCls = "block text-sm font-medium text-white/60 mb-1.5";
 
   return (
@@ -76,14 +107,15 @@ export default function EditEventPage() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", bounce: 0.12, visualDuration: 0.5 }}
-      className="mx-auto max-w-2xl px-6 py-10"
+      className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10"
     >
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-bold tracking-tight text-white">Edit Event</h1>
         <Link href={`/events/${event.id}`}><button className="rounded-lg border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-white transition hover:bg-white/10">Cancel</button></Link>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+      <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
+        {error && <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p>}
         <div>
           <label className={labelCls}>Title</label>
           <input className={inputCls} value={title} onChange={(e) => setTitle(e.target.value)} required />
@@ -92,7 +124,7 @@ export default function EditEventPage() {
           <label className={labelCls}>Description</label>
           <textarea className={`${inputCls} min-h-[100px]`} value={description} onChange={(e) => setDescription(e.target.value)} required />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className={labelCls}>Date</label>
             <input type="date" className={inputCls} value={date} onChange={(e) => setDate(e.target.value)} required />
@@ -106,7 +138,7 @@ export default function EditEventPage() {
           <label className={labelCls}>Location</label>
           <input className={inputCls} value={location} onChange={(e) => setLocation(e.target.value)} required />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className={labelCls}>Capacity</label>
             <input type="number" className={inputCls} value={capacity} onChange={(e) => setCapacity(e.target.value)} min="1" required />
@@ -168,14 +200,14 @@ export default function EditEventPage() {
           )}
         </div>
 
-        <motion.div className="flex gap-3">
+        <motion.div className="flex flex-col gap-3 sm:flex-row">
           <motion.button
             type="submit"
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             className="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 text-sm font-semibold text-black transition hover:from-emerald-400 hover:to-teal-400"
           >
-            Save Changes
+            {saving ? "Saving changes…" : "Save Changes"}
           </motion.button>
 
           <Link href={`/events/${event.id}`}><motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="rounded-xl border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">View</motion.button></Link>

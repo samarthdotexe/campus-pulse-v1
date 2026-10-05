@@ -1,16 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { getEvents } from "@/lib/store";
-import { clubs } from "@/lib/data";
 import { useAuth } from "@/components/auth-context";
-import { hasUserRsvped } from "@/lib/store";
+import { useCampusData } from "@/components/campus-data-context";
 import { ArrowRight, Calendar, MapPin, Users, Edit3 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function AllEventsPage() {
-  const events = getEvents();
   const { user } = useAuth();
+  const { events, clubs, myRsvps, error } = useCampusData();
 
   // Sort events by date (earliest first)
   const sortedEvents = [...events].sort(
@@ -23,7 +21,7 @@ export default function AllEventsPage() {
   const participationRate = totalCapacity > 0 ? Math.round((filledSpots / totalCapacity) * 100) : 0;
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -58,7 +56,7 @@ export default function AllEventsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, type: "spring", bounce: 0.3 }}
-        className="mb-8 grid grid-cols-3 gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6"
+        className="mb-8 grid grid-cols-1 gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-3 sm:p-6"
       >
         <div className="text-center">
           <div className="text-2xl font-bold text-white">{clubCount}</div>
@@ -105,7 +103,7 @@ export default function AllEventsPage() {
             {sortedEvents.map((event, index) => {
               const club = clubs.find((c) => c.slug === event.clubSlug);
               const isOwner = user?.role === "admin" || (user?.role === "committee" && (event.createdBy === user.id || event.clubSlug === user.clubSlug));
-              const hasRsvped = user?.role === "participant" && hasUserRsvped(user.id, event.id);
+              const hasRsvped = user?.role === "participant" && myRsvps.some((rsvp) => rsvp.userId === user.id && rsvp.eventId === event.id);
 
               return (
                 <motion.div
@@ -120,7 +118,7 @@ export default function AllEventsPage() {
                     visualDuration: 0.4 + index * 0.03,
                   }}
                   whileHover={{ y: -2, transition: { duration: 0.15 } }}
-                  className="relative group overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.03] to-white/[0.015] p-6 transition-colors hover:border-white/20"
+                  className="relative group overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.03] to-white/[0.015] p-4 transition-colors hover:border-white/20 sm:p-6"
                 >
                   {/* Club color indicator */}
                   <div
@@ -177,7 +175,7 @@ export default function AllEventsPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between">
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                       <Link
                         href={`/events/${event.id}`}
                         className="flex items-center gap-1.5 text-xs font-medium text-white/60 hover:text-white transition-colors"
@@ -236,6 +234,7 @@ export default function AllEventsPage() {
           </Link>
         </motion.div>
       )}
+      {error && <p className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p>}
     </div>
   );
 }

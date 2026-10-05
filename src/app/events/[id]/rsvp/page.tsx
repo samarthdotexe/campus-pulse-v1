@@ -4,20 +4,21 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-context";
-import { getEvents, addRsvp, hasUserRsvped, removeRsvp } from "@/lib/store";
-import { clubs } from "@/lib/data";
+import { useCampusData } from "@/components/campus-data-context";
 import { motion } from "motion/react";
 
 export default function RsvpPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
-  const events = getEvents();
+  const { events, clubs, myRsvps, createRsvp, cancelRsvp, loading } = useCampusData();
   const event = events.find((e) => e.id === params.id);
 
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [submitted, setSubmitted] = useState(false);
   const [cancelled, setCancelled] = useState(false);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!user || user.role !== "participant") {
@@ -25,8 +26,9 @@ export default function RsvpPage() {
     }
   }, [user, event, router]);
 
+  if (loading) return <div className="mx-auto max-w-2xl px-4 py-20 text-center text-white/50 sm:px-6">Loading RSVP form…</div>;
   if (!event || !user || user.role !== "participant") return null;
-  const alreadyRsvped = hasUserRsvped(user.id, event.id);
+  const alreadyRsvped = myRsvps.some((rsvp) => rsvp.userId === user.id && rsvp.eventId === event.id);
 
   const club = clubs.find((c) => c.slug === event.clubSlug);
 
@@ -40,16 +42,18 @@ export default function RsvpPage() {
     updateAnswer(qId, next);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    addRsvp({
-      id: `rsvp-${crypto.randomUUID()}`,
-      eventId: event.id,
-      userId: user.id,
-      answers,
-      submittedAt: new Date().toISOString(),
-    });
-    setSubmitted(true);
+    setError("");
+    setSubmitting(true);
+    try {
+      await createRsvp(event.id, user.id, answers);
+      setSubmitted(true);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Unable to confirm your RSVP.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const calendarUrl = (() => {
@@ -62,14 +66,19 @@ export default function RsvpPage() {
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${format(start)}/${format(end)}&details=${encodeURIComponent(event.description)}&location=${encodeURIComponent(event.location)}`;
   })();
 
-  const handleCancel = () => {
-    removeRsvp(user.id, event.id);
-    setCancelled(true);
+  const handleCancel = async () => {
+    setError("");
+    try {
+      await cancelRsvp(event.id, user.id);
+      setCancelled(true);
+    } catch (cancelError) {
+      setError(cancelError instanceof Error ? cancelError.message : "Unable to cancel your RSVP.");
+    }
   };
 
   if (cancelled) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-20 text-center">
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6">
         <h1 className="text-2xl font-bold text-white">Removed. No hard feelings. (Okay, maybe a little.)</h1>
         <p className="mt-2 text-white/50">Your RSVP for {event.title} has been cancelled.</p>
         <Link href={`/events/${event.id}`} className="mt-6 inline-block rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90">Back to Event</Link>
@@ -79,7 +88,7 @@ export default function RsvpPage() {
 
   if (alreadyRsvped) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-20 text-center">
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6">
         <h1 className="text-2xl font-bold text-white">Already RSVPed</h1>
         <p className="mt-2 text-white/50">You have already submitted your RSVP for this event.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -92,7 +101,7 @@ export default function RsvpPage() {
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-20 text-center">
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6">
         <h1 className="text-2xl font-bold text-emerald-400">Locked in. Don&apos;t ghost us.</h1>
         <p className="mt-2 text-white/50">You are registered for {event.title}.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -103,7 +112,7 @@ export default function RsvpPage() {
     );
   }
 
-  const inputCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none transition focus:border-white/25 focus:bg-white/[0.07]";
+  const inputCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white placeholder-white/30 outline-none transition focus:border-white/25 focus:bg-white/[0.07]";
   const labelCls = "block text-sm font-medium text-white/60 mb-1.5";
 
   return (
@@ -111,7 +120,7 @@ export default function RsvpPage() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", bounce: 0.12, visualDuration: 0.5 }}
-      className="mx-auto max-w-2xl px-6 py-10"
+      className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10"
     >
       <div className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <span
@@ -124,7 +133,8 @@ export default function RsvpPage() {
         <p className="mt-1 text-sm text-white/50">{event.date} at {event.time} &middot; {event.location}</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+      <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
+        {error && <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p>}
         {event.rsvpQuestions.length === 0 ? (
           <p className="text-sm text-white/50">No additional questions. Confirm your RSVP below.</p>
         ) : (
@@ -211,7 +221,7 @@ export default function RsvpPage() {
           whileTap={{ scale: 0.98 }}
           className="mt-4 w-full rounded-xl bg-white py-3 text-sm font-semibold text-black transition hover:bg-white/90"
         >
-          Confirm RSVP
+          {submitting ? "Confirming RSVP…" : "Confirm RSVP"}
         </motion.button>
       </form>
     </motion.div>

@@ -6,6 +6,7 @@ export interface User {
   email: string;
   role: UserRole;
   clubSlug?: string;
+  avatarPath?: string;
 }
 
 export interface RsvpQuestion {

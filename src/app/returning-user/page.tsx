@@ -3,10 +3,12 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { WebsiteShaderCanvas } from "@/components/ui/shader-aurora-veil";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
+import { useAuth } from "@/components/auth-context";
 
 export default function ReturningUserPage() {
   const router = useRouter();
+  const { logout } = useAuth();
 
   // Redirect to landing page after brief delay
   useEffect(() => {
@@ -18,13 +20,13 @@ export default function ReturningUserPage() {
   }, [router]);
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)]">
+    <div className="relative min-h-[calc(100dvh-4rem)]">
       <WebsiteShaderCanvas
         preset="aurora-veil"
         tone="dark"
         className="absolute inset-0 h-full w-full"
       >
-        <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-6 py-20">
+        <div className="flex min-h-[calc(100dvh-4rem)] flex-col items-center justify-center px-4 py-12 sm:px-6 sm:py-20">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -107,7 +109,10 @@ export default function ReturningUserPage() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => router.push("/login")}
+                  onClick={async () => {
+                    await logout();
+                    router.push("/login");
+                  }}
                   className="rounded-lg border border-white/20 bg-white/[0.05] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/[0.1]"
                 >
                   Sign Out

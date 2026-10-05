@@ -1,72 +1,126 @@
 "use client";
 
-import { createContext, useContext, useState, useSyncExternalStore, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User } from "@/lib/data";
+import { isApprovalAdmin, signInWithPassword, signUpWithPassword, SignUpInput } from "@/lib/supabase/auth";
+import { createClient } from "@/lib/supabase/client";
+import { getCurrentProfile } from "@/lib/supabase/repository";
 
 interface AuthContextValue {
   user: User | null;
-  login: (user: User) => void;
-  logout: () => void;
-}
-
-let cachedStoredUser: User | null = null;
-let cachedStoredUserRaw: string | null | undefined;
-
-const subscribeToStoredUser = () => () => {};
-
-// Return the same object until storage changes. useSyncExternalStore requires
-// snapshots to be referentially stable between renders.
-function getStoredUser(): User | null {
-  try {
-    const raw = localStorage.getItem("campus_active_user");
-    if (raw === cachedStoredUserRaw) return cachedStoredUser;
-    cachedStoredUserRaw = raw;
-    cachedStoredUser = raw ? JSON.parse(raw) : null;
-    return cachedStoredUser;
-  } catch {
-    cachedStoredUserRaw = null;
-    cachedStoredUser = null;
-    return null;
-  }
-}
-
-// Helper to persist active user
-function saveUser(user: User | null): void {
-  try {
-    const raw = JSON.stringify(user || null);
-    localStorage.setItem("campus_active_user", raw);
-    cachedStoredUserRaw = raw;
-    cachedStoredUser = user;
-  } catch {}
+  loading: boolean;
+  error: string | null;
+  canApproveRoleRequests: boolean;
+  signUp: (input: SignUpInput) => Promise<{ requiresEmailConfirmation: boolean }>;
+  signIn: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
-  login: () => {},
-  logout: () => {},
+  loading: true,
+  error: null,
+  canApproveRoleRequests: false,
+  signUp: async () => ({ requiresEmailConfirmation: false }),
+  signIn: async () => {},
+  logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const storedUser = useSyncExternalStore(
-    subscribeToStoredUser,
-    getStoredUser,
-    () => null
-  );
-  const [sessionUser, setSessionUser] = useState<User | null | undefined>(undefined);
-  const user = sessionUser === undefined ? storedUser : sessionUser;
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [canApproveRoleRequests, setCanApproveRoleRequests] = useState(false);
 
-  const login = (u: User) => {
-    saveUser(u);
-    setSessionUser(u);
+  useEffect(() => {
+    let active = true;
+    let unsubscribe = () => {};
+
+    const loadProfile = async (nextUser: { id: string; email?: string | null } | null | undefined) => {
+      if (!nextUser?.email) {
+        if (active) {
+          setUser(null);
+          setCanApproveRoleRequests(false);
+          setLoading(false);
+        }
+        return;
+      }
+      try {
+        const profile = await getCurrentProfile(nextUser.id, nextUser.email);
+        if (active) {
+          setUser(profile);
+          setCanApproveRoleRequests(await isApprovalAdmin().catch(() => false));
+          setLoading(false);
+        }
+      } catch (profileError) {
+        if (active) {
+          setError(profileError instanceof Error ? profileError.message : "Unable to load your account.");
+          setLoading(false);
+        }
+      }
+    };
+
+    const syncSession = async () => {
+      try {
+        const client = createClient();
+        const { data: { session }, error: sessionError } = await client.auth.getSession();
+        if (sessionError) throw sessionError;
+        if (!active) return;
+        await loadProfile(session?.user);
+        const listener = client.auth.onAuthStateChange((_event, nextSession) => {
+          void loadProfile(nextSession?.user);
+        });
+        unsubscribe = () => listener.data.subscription.unsubscribe();
+      } catch (sessionError) {
+        if (active) {
+          setError(sessionError instanceof Error ? sessionError.message : "Unable to initialize authentication.");
+          setLoading(false);
+        }
+      }
+    };
+
+    void syncSession();
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
+
+  const signUp = async (input: SignUpInput) => {
+    setError(null);
+    try {
+      return await signUpWithPassword(input);
+    } catch (signUpError) {
+      const message = signUpError instanceof Error ? signUpError.message : "Unable to create your account.";
+      setError(message);
+      throw new Error(message);
+    }
   };
 
-  const logout = () => {
-    saveUser(null);
-    setSessionUser(null);
+  const signIn = async (email: string, password: string) => {
+    setError(null);
+    try {
+      await signInWithPassword(email, password);
+    } catch (signInError) {
+      const message = signInError instanceof Error ? signInError.message : "Unable to log in.";
+      setError(message);
+      throw new Error(message);
+    }
+  };
+
+  const logout = async () => {
+    const { error: signOutError } = await createClient().auth.signOut();
+    if (signOutError) {
+      const message = signOutError.message;
+      setError(message);
+      throw new Error(message);
+    }
+    setUser(null);
+    setCanApproveRoleRequests(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, error, canApproveRoleRequests, signUp, signIn, logout }}>
       {children}
     </AuthContext.Provider>
   );

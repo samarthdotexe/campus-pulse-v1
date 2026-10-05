@@ -3,14 +3,15 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
-import { addEvent } from "@/lib/store";
-import { clubs, RsvpQuestion } from "@/lib/data";
+import { RsvpQuestion } from "@/lib/data";
+import { useCampusData } from "@/components/campus-data-context";
 import { X } from "lucide-react";
 import { motion } from "motion/react";
 
 export default function NewEventPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { clubs, createEvent } = useCampusData();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
@@ -24,6 +25,8 @@ export default function NewEventPage() {
   const [qType, setQType] = useState<RsvpQuestion["type"]>("text");
   const [qRequired, setQRequired] = useState(false);
   const [qOptions, setQOptions] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (user && user.role !== "committee" && user.role !== "admin") router.replace("/login");
@@ -49,27 +52,34 @@ export default function NewEventPage() {
 
   const removeQuestion = (id: string) => setQuestions(questions.filter((q) => q.id !== id));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    const event = {
-      id: `${slug}-${Date.now()}`,
+    if (!clubSlug) {
+      setError("Create a club before creating an event.");
+      return;
+    }
+    setError("");
+    setSubmitting(true);
+    try {
+      await createEvent({
       title,
       description,
       date,
       time,
       location,
       clubSlug,
-      rsvps: 0,
       capacity: Number(capacity),
-      createdBy: user.id,
       rsvpQuestions: questions,
-    };
-    addEvent(event);
-    router.push("/calendar");
+      }, user.id);
+      router.push("/calendar");
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "Unable to create the event.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const inputCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none transition focus:border-white/25 focus:bg-white/[0.07]";
+  const inputCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white placeholder-white/30 outline-none transition focus:border-white/25 focus:bg-white/[0.07]";
   const labelCls = "block text-sm font-medium text-white/60 mb-1.5";
 
   return (
@@ -77,11 +87,12 @@ export default function NewEventPage() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", bounce: 0.12, visualDuration: 0.5 }}
-      className="mx-auto max-w-2xl px-6 py-10"
+      className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10"
     >
       <h1 className="mb-8 text-3xl font-bold tracking-tight text-white">Create Event</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+      <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
+        {error && <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p>}
         <div>
           <label className={labelCls}>Title</label>
           <input className={inputCls} value={title} onChange={(e) => setTitle(e.target.value)} required />
@@ -90,7 +101,7 @@ export default function NewEventPage() {
           <label className={labelCls}>Description</label>
           <textarea className={`${inputCls} min-h-[100px]`} value={description} onChange={(e) => setDescription(e.target.value)} required />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className={labelCls}>Date</label>
             <input type="date" className={inputCls} value={date} onChange={(e) => setDate(e.target.value)} required />
@@ -104,7 +115,7 @@ export default function NewEventPage() {
           <label className={labelCls}>Location</label>
           <input className={inputCls} value={location} onChange={(e) => setLocation(e.target.value)} required />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className={labelCls}>Capacity</label>
             <input type="number" className={inputCls} value={capacity} onChange={(e) => setCapacity(e.target.value)} min="1" required />
@@ -176,7 +187,7 @@ export default function NewEventPage() {
           whileTap={{ scale: 0.98 }}
           className="mt-4 w-full rounded-xl bg-white py-3 text-sm font-semibold text-black transition hover:bg-white/90"
         >
-          Create Event
+          {submitting ? "Creating event…" : "Create Event"}
         </motion.button>
       </form>
     </motion.div>

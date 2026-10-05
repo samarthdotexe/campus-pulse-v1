@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { getEvents } from "@/lib/store";
-import { clubs, CampusEvent } from "@/lib/data";
+import { CampusEvent } from "@/lib/data";
 import { useAuth } from "@/components/auth-context";
+import { useCampusData } from "@/components/campus-data-context";
 import { ChevronLeft, ChevronRight, MapPin, Users } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -36,8 +36,7 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [direction, setDirection] = useState(0);
   const { user } = useAuth();
-
-  const events = useMemo(() => getEvents(), []);
+  const { events, clubs, error } = useCampusData();
 
   const eventsByDate = useMemo(() => {
     const map: Record<string, CampusEvent[]> = {};
@@ -76,7 +75,7 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
       <motion.h1
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -85,12 +84,13 @@ export default function CalendarPage() {
       >
         Calendar
       </motion.h1>
+      {error && <p className="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p>}
 
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "spring", bounce: 0.12, visualDuration: 0.5, delay: 0.1 }}
-        className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
+        className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 sm:p-6"
       >
         <div className="mb-6 flex items-center justify-between">
           <motion.button
@@ -110,7 +110,7 @@ export default function CalendarPage() {
               animate="center"
               exit="exit"
               transition={{ duration: 0.25, ease: "easeInOut" }}
-              className="text-xl font-semibold text-white"
+            className="text-center text-base font-semibold text-white sm:text-xl"
             >
               {monthName}
             </motion.h2>
@@ -125,9 +125,9 @@ export default function CalendarPage() {
           </motion.button>
         </div>
 
-        <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-white/40 mb-2">
+        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-medium text-white/40 sm:text-xs mb-2">
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-            <div key={d} className="py-2">{d}</div>
+            <div key={d} className="py-2"><span className="sm:hidden">{d.slice(0, 1)}</span><span className="hidden sm:inline">{d}</span></div>
           ))}
         </div>
 
@@ -155,7 +155,7 @@ export default function CalendarPage() {
                   whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedDate(isSelected ? null : dateKey)}
-                  className={`relative flex flex-col items-center rounded-xl py-2 text-sm transition ${
+                  className={`relative flex min-h-10 flex-col items-center justify-center rounded-lg py-1 text-xs transition sm:min-h-0 sm:rounded-xl sm:py-2 sm:text-sm ${
                     isSelected ? "bg-white/10 border border-white/20" : "border border-transparent hover:bg-white/5"
                   } ${isToday ? "text-emerald-400 font-semibold" : "text-white/70"}`}
                 >

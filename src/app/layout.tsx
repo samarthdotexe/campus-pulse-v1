@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import Navbar from "@/components/navbar";
 import { AuthProvider } from "@/components/auth-context";
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-inter",
-});
+import { CampusDataProvider } from "@/components/campus-data-context";
 
 export const metadata: Metadata = {
   title: "Campus Pulse",
@@ -19,12 +13,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={inter.variable}>
+    <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-black text-white antialiased font-sans">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <AuthProvider>
-            <Navbar />
-            <main className="pt-16">{children}</main>
+            <CampusDataProvider>
+              <Navbar />
+              <main className="pt-16">{children}</main>
+            </CampusDataProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

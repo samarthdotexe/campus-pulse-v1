@@ -276,7 +276,7 @@ export function WebsiteShaderCanvas({
     };
 
     const handleContextRestored = () => {
-      setFailed(false);
+      requestAnimationFrame(() => setFailed(false));
       setContextEpoch((value) => value + 1);
     };
 
@@ -299,7 +299,7 @@ export function WebsiteShaderCanvas({
       } as WebGLContextAttributes);
 
       if (!gl) {
-        setFailed(true);
+        requestAnimationFrame(() => setFailed(true));
         return cleanup;
       }
 
@@ -311,7 +311,7 @@ export function WebsiteShaderCanvas({
       buffer = gl.createBuffer();
 
       if (!program || !buffer) {
-        setFailed(true);
+        requestAnimationFrame(() => setFailed(true));
         return cleanup;
       }
 
@@ -333,7 +333,7 @@ export function WebsiteShaderCanvas({
       gl.useProgram(program);
       gl.enableVertexAttribArray(positionLocation);
       gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-      setFailed(false);
+      requestAnimationFrame(() => setFailed(false));
 
       const resize = () => {
         if (!gl) return;
@@ -442,7 +442,7 @@ export function WebsiteShaderCanvas({
       render(performance.now());
       if (shouldAnimate) start();
     } catch {
-      setFailed(true);
+      requestAnimationFrame(() => setFailed(true));
     }
 
     return cleanup;
@@ -544,7 +544,8 @@ export function WebsiteShaderDemo({
   const { resolvedTheme, theme } = useTheme();
 
   useEffect(() => {
-    setMounted(true);
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   const tone =

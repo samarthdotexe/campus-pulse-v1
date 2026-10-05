@@ -3,9 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth-context";
-import { Calendar, Users, CalendarDays, Plus, LayoutDashboard, Settings2 } from "lucide-react";
+import { Calendar, Users, CalendarDays, Plus, LayoutDashboard, Settings2, ClipboardCheck, Menu, UserRound, X } from "lucide-react";
 import { motion } from "motion/react";
 
 const navLinks = [
@@ -45,7 +46,19 @@ export function SignUpButton() {
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, canApproveRoleRequests } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const isOrganizer = user?.role === "committee" || user?.role === "admin";
+
+  const closeMenu = () => setMenuOpen(false);
+  const actionLinks = [
+    ...(isOrganizer ? [
+      { href: "/events/new", label: "Create event", icon: Plus, primary: true },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    ] : []),
+    ...(user?.role === "admin" ? [{ href: "/clubs/manage", label: "Manage Clubs", icon: Settings2 }] : []),
+    ...(canApproveRoleRequests ? [{ href: "/member-requests", label: "Member requests", icon: ClipboardCheck }] : []),
+  ];
 
   return (
     <motion.nav
@@ -54,8 +67,8 @@ export default function Navbar() {
       transition={{ type: "spring", bounce: 0.15, visualDuration: 0.5 }}
       className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur-xl"
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2.5">
+      <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+        <Link href="/" onClick={closeMenu} className="flex min-w-0 items-center gap-2.5">
           <Image
             src="/campus-pulse-icon.png"
             alt="Campus Pulse"
@@ -64,12 +77,12 @@ export default function Navbar() {
             className="h-8 w-8 object-contain"
             priority
           />
-          <span className="text-lg font-semibold tracking-tight text-white">
+          <span className="truncate text-lg font-semibold tracking-tight text-white">
             Campus Pulse
           </span>
         </Link>
 
-        <div className="flex items-center gap-1">
+        <div className="hidden items-center gap-1 md:flex">
           {navLinks.map((link) => {
             const isActive =
               pathname === link.href ||
@@ -106,29 +119,11 @@ export default function Navbar() {
           })}
 
           <div className="ml-3 flex items-center gap-2 border-l border-white/10 pl-3">
-            {(user?.role === "committee" || user?.role === "admin") && (
-              <Link
-                href="/events/new"
-                className="flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-1.5 text-sm font-medium text-emerald-300 transition-colors hover:bg-emerald-500/25"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Create event
-              </Link>
-            )}
-            {(user?.role === "committee" || user?.role === "admin") && (
-              <Link href="/dashboard" className="flex items-center gap-1.5 rounded-lg bg-white/5 px-3 py-1.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white">
-                <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
-              </Link>
-            )}
-            {user?.role === "admin" && (
-              <Link href="/clubs/manage" className="flex items-center gap-1.5 rounded-lg bg-white/5 px-3 py-1.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white">
-                <Settings2 className="h-3.5 w-3.5" /> Manage Clubs
-              </Link>
-            )}
+            {actionLinks.map((link) => { const Icon = link.icon; return <Link key={link.href} href={link.href} className={cn("flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors", link.primary ? "bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25" : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white")}><Icon className="h-3.5 w-3.5" /> {link.label}</Link>; })}
             {!user && <SignUpButton />}
             {user ? (
               <>
-                <span className="text-sm text-white/70">{user.name}</span>
+                <Link href="/account" className="text-sm text-white/70 hover:text-white">{user.name}</Link>
                 <span
                   className={cn(
                     "rounded-md px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide",
@@ -160,7 +155,9 @@ export default function Navbar() {
             )}
           </div>
         </div>
+        <button type="button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-controls="mobile-navigation" aria-label={menuOpen ? "Close navigation" : "Open navigation"} className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-white/80 transition hover:bg-white/10 hover:text-white md:hidden">{menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
       </div>
+      {menuOpen && <div id="mobile-navigation" className="border-t border-white/10 bg-black/80 px-4 py-3 backdrop-blur-xl md:hidden"><div className="mx-auto grid max-w-6xl gap-1">{navLinks.map((link) => { const Icon = link.icon; const active = pathname === link.href || pathname.startsWith(`${link.href}/`); return <Link key={link.href} href={link.href} onClick={closeMenu} className={cn("flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium", active ? "bg-white/10 text-white" : "text-white/65 hover:bg-white/5 hover:text-white")}><Icon className="h-4 w-4" />{link.label}</Link>; })}{actionLinks.map((link) => { const Icon = link.icon; return <Link key={link.href} href={link.href} onClick={closeMenu} className={cn("flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium", link.primary ? "bg-emerald-500/15 text-emerald-200" : "text-white/65 hover:bg-white/5 hover:text-white")}><Icon className="h-4 w-4" />{link.label}</Link>; })}<div className="mt-2 border-t border-white/10 pt-2">{user ? <><Link href="/account" onClick={closeMenu} className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/75 hover:bg-white/5 hover:text-white"><UserRound className="h-4 w-4" /> Account</Link><button type="button" onClick={() => { closeMenu(); void logout(); }} className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-200 hover:bg-red-500/10">Log out</button></> : <div className="grid grid-cols-2 gap-2"><Link href="/login" onClick={closeMenu} className="flex min-h-11 items-center justify-center rounded-lg bg-white/10 px-3 py-2 text-sm font-medium text-white">Login</Link><Link href="/signup" onClick={closeMenu} className="flex min-h-11 items-center justify-center rounded-lg bg-emerald-500/15 px-3 py-2 text-sm font-medium text-emerald-300">Sign up</Link></div>}</div></div></div>}
     </motion.nav>
   );
 }
