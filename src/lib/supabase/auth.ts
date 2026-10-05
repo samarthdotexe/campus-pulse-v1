@@ -76,7 +76,12 @@ export async function signUpWithPassword(input: SignUpInput): Promise<{ requires
       },
     },
   });
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message === "Database error saving new user") {
+      throw new Error("We couldn’t create your account because the website and database are being updated. Please try again in a few minutes.");
+    }
+    throw new Error(error.message);
+  }
   return { requiresEmailConfirmation: !data.session };
 }
 
