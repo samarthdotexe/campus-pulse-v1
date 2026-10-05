@@ -4,6 +4,7 @@ import type { User, UserRole } from "@/lib/data";
 export type ProfileRecord = {
   id: string;
   name: string;
+  username: string | null;
   role: UserRole;
   club_slug: string | null;
   avatar_path: string | null;
@@ -32,6 +33,7 @@ export type SignUpInput = {
   email: string;
   password: string;
   confirmPassword: string;
+  username: string;
   requestedRole: UserRole;
   requestedClubSlug?: string;
 };
@@ -40,6 +42,7 @@ export function mapProfileToCampusUser(profile: ProfileRecord, email: string): C
   return {
     id: profile.id,
     name: profile.name,
+    ...(profile.username ? { username: profile.username } : {}),
     email,
     role: profile.role,
     ...(profile.club_slug ? { clubSlug: profile.club_slug } : {}),
@@ -49,6 +52,7 @@ export function mapProfileToCampusUser(profile: ProfileRecord, email: string): C
 
 export function validateSignUpInput(input: SignUpInput): string | null {
   if (!input.name.trim()) return "Enter your name to create an account.";
+  if (!/^[a-z0-9_]{3,30}$/.test(input.username.trim())) return "Use 3–30 lowercase letters, numbers, or underscores for your username.";
   if (!input.email.trim()) return "Enter your campus email to continue.";
   if (input.password.length < 8) return "Use a password with at least 8 characters.";
   if (input.password !== input.confirmPassword) return "Your password confirmation does not match.";
@@ -66,6 +70,7 @@ export async function signUpWithPassword(input: SignUpInput): Promise<{ requires
     options: {
       data: {
         name: input.name.trim(),
+        username: input.username.trim().toLowerCase(),
         requested_role: input.requestedRole,
         ...(input.requestedRole === "committee" ? { requested_club_slug: input.requestedClubSlug?.trim() } : {}),
       },
@@ -89,7 +94,7 @@ export async function signOut(): Promise<void> {
 export async function getProfile(userId: string, email: string): Promise<CampusUser | null> {
   const { data, error } = await createClient()
     .from("profiles")
-    .select("id, name, role, club_slug, avatar_path")
+    .select("id, name, username, role, club_slug, avatar_path")
     .eq("id", userId)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -136,13 +141,14 @@ export async function requestRole(role: Exclude<UserRole, "participant">, clubSl
   };
 }
 
-export async function updateProfile(name: string, avatarPath: string | null): Promise<CampusUser> {
+export async function updateProfile(name: string, username: string, avatarPath: string | null): Promise<CampusUser> {
   const client = createClient();
   const { data: authData, error: authError } = await client.auth.getUser();
   if (authError || !authData.user?.email) throw new Error("Your session has expired. Please log in again.");
 
   const { data, error } = await client.rpc("update_my_profile", {
     p_name: name,
+    p_username: username,
     p_avatar_path: avatarPath,
   });
   if (error) throw new Error(error.message);

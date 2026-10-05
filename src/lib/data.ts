@@ -3,6 +3,7 @@ export type UserRole = "participant" | "committee" | "admin";
 export interface User {
   id: string;
   name: string;
+  username?: string;
   email: string;
   role: UserRole;
   clubSlug?: string;

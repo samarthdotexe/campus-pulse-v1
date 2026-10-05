@@ -21,6 +21,7 @@ export default function SignupPage() {
   const { signUp } = useAuth();
   const [role, setRole] = useState<UserRole | null>(null);
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -44,7 +45,7 @@ export default function SignupPage() {
     setError("");
     setSubmitting(true);
     try {
-      const result = await signUp({ name, email, password, confirmPassword, requestedRole: role, requestedClubSlug: clubSlug });
+      const result = await signUp({ name, username, email, password, confirmPassword, requestedRole: role, requestedClubSlug: clubSlug });
       const params = new URLSearchParams();
       if (result.requiresEmailConfirmation) params.set("confirm", "email");
       if (role !== "participant") params.set("pending", "role");
@@ -69,6 +70,7 @@ export default function SignupPage() {
                 {role !== "participant" && <p className="rounded-lg border border-emerald-400/20 bg-emerald-400/5 px-4 py-3 text-sm text-emerald-100/80">Your account will start as a participant. A Campus Pulse admin assigns Club Member or Faculty Member / Admin access after verification.</p>}
                 {error && <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
                 <div><label className="mb-1.5 block text-sm font-medium text-white/70">Name</label><input required autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Your name" className="w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 text-base text-white placeholder-white/30 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50" /></div>
+                <div><label className="mb-1.5 block text-sm font-medium text-white/70">Username</label><input required minLength={3} maxLength={30} autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))} placeholder="e.g. samarth_r" className="w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 text-base text-white placeholder-white/30 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50" /><p className="mt-1.5 text-xs text-white/40">3–30 lowercase letters, numbers, or underscores. Must be unique.</p></div>
                 <div><label className="mb-1.5 block text-sm font-medium text-white/70">Campus email</label><input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@campus.edu" className="w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 text-base text-white placeholder-white/30 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50" /></div>
                 {role === "committee" && <div><label className="mb-1.5 block text-sm font-medium text-white/70">Club you want to represent</label><select required value={clubSlug} onChange={(event) => setClubSlug(event.target.value)} disabled={!clubOptions.length} className="w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 text-base text-white outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 disabled:cursor-not-allowed disabled:opacity-60"><option value="" className="bg-black">{clubOptions.length ? "Choose a club" : "No clubs available"}</option>{clubOptions.map((club) => <option key={club.slug} value={club.slug} className="bg-black">{club.name}</option>)}</select></div>}
                 <div><label className="mb-1.5 block text-sm font-medium text-white/70">Password</label><div className="relative"><input type={showPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" className="w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 pr-12 text-base text-white placeholder-white/30 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50" /><button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-white/45 transition hover:text-white focus:outline-none focus-visible:text-emerald-300">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></div>

@@ -13,6 +13,7 @@ const roleLabel = { participant: "Club Participant", committee: "Club Member", a
 export default function AccountPage() {
   const { user, loading, logout } = useAuth();
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [roleRequest, setRoleRequest] = useState<RoleRequest | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -20,7 +21,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (!user) return;
-    const nameFrame = requestAnimationFrame(() => setName(user.name));
+    const nameFrame = requestAnimationFrame(() => { setName(user.name); setUsername(user.username ?? ""); });
     void getMyRoleRequest().then(setRoleRequest).catch(() => setRoleRequest(null));
     if (user.avatarPath) void getAvatarUrl(user.avatarPath).then(setAvatarUrl).catch(() => setAvatarUrl(null));
     return () => cancelAnimationFrame(nameFrame);
@@ -33,7 +34,7 @@ export default function AccountPage() {
     setError("");
     try {
       const avatarPath = await uploadAvatar(file, user.id);
-      const updated = await updateProfile(name, avatarPath);
+      const updated = await updateProfile(name, username, avatarPath);
       setAvatarUrl(await getAvatarUrl(updated.avatarPath ?? avatarPath));
       setStatus("saved");
     } catch (uploadError) {
@@ -48,7 +49,7 @@ export default function AccountPage() {
     setStatus("saving");
     setError("");
     try {
-      const updated = await updateProfile(name, user.avatarPath ?? null);
+      const updated = await updateProfile(name, username, user.avatarPath ?? null);
       setName(updated.name);
       setStatus("saved");
     } catch (saveError) {
@@ -82,6 +83,7 @@ export default function AccountPage() {
               {status === "saved" && <p role="status" className="rounded-lg border border-emerald-400/25 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">Profile saved.</p>}
               {error && <p role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
               <div><label htmlFor="display-name" className="mb-1.5 block text-sm font-medium text-white/70">Display name</label><input id="display-name" required minLength={2} maxLength={80} autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} className="w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 text-base text-white outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50" /></div>
+              <div><label htmlFor="username" className="mb-1.5 block text-sm font-medium text-white/70">Username</label><input id="username" required minLength={3} maxLength={30} autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))} className="w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-3 text-base text-white outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50" /><p className="mt-1.5 text-xs text-white/40">3–30 lowercase letters, numbers, or underscores. Must be unique.</p></div>
               <button type="submit" disabled={status === "saving"} className="min-h-11 w-full rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-3 text-sm font-semibold text-black hover:from-emerald-400 hover:to-teal-400 disabled:cursor-not-allowed disabled:opacity-60">{status === "saving" ? "Saving…" : "Save profile"}</button>
             </form>
 

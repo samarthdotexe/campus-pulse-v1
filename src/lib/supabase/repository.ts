@@ -29,6 +29,7 @@ type QuestionRecord = {
 type ClubRecord = {
   slug: string;
   name: string;
+  username: string | null;
   tagline: string;
   description: string;
   category: string;
@@ -112,6 +113,7 @@ function mapClubRecord(record: ClubRecord): Club {
   return {
     slug: record.slug,
     name: record.name,
+    ...(record.username ? { username: record.username } : {}),
     tagline: record.tagline,
     description: record.description,
     category: record.category,
@@ -171,7 +173,7 @@ export async function listEvents(): Promise<CampusEvent[]> {
 }
 
 export async function getCurrentProfile(id: string, email: string): Promise<User | null> {
-  const { data, error } = await createClient().from("profiles").select("id, name, role, club_slug, avatar_path").eq("id", id).maybeSingle();
+  const { data, error } = await createClient().from("profiles").select("id, name, username, role, club_slug, avatar_path").eq("id", id).maybeSingle();
   if (error) databaseError(error);
   return data ? mapProfileRecord(data as ProfileRecord, email) : null;
 }

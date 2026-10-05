@@ -8,6 +8,7 @@ describe("mapProfileToCampusUser", () => {
         {
           id: "profile-1",
           name: "Avery Participant",
+          username: "avery_participant",
           role: "participant",
           club_slug: null,
           avatar_path: null,
@@ -17,6 +18,7 @@ describe("mapProfileToCampusUser", () => {
     ).toEqual({
       id: "profile-1",
       name: "Avery Participant",
+      username: "avery_participant",
       email: "avery@campus.edu",
       role: "participant",
     });
@@ -28,6 +30,7 @@ describe("mapProfileToCampusUser", () => {
         {
           id: "profile-2",
           name: "Casey Organizer",
+          username: "casey_organizer",
           role: "committee",
           club_slug: "robotics-club",
           avatar_path: "profile-2/avatar.webp",
@@ -37,6 +40,7 @@ describe("mapProfileToCampusUser", () => {
     ).toEqual({
       id: "profile-2",
       name: "Casey Organizer",
+      username: "casey_organizer",
       email: "casey@campus.edu",
       role: "committee",
       clubSlug: "robotics-club",
@@ -50,6 +54,7 @@ describe("mapProfileToCampusUser", () => {
         {
           id: "profile-3",
           name: "Riley Admin",
+          username: "riley_admin",
           role: "admin",
           club_slug: null,
           avatar_path: null,
@@ -59,6 +64,7 @@ describe("mapProfileToCampusUser", () => {
     ).toEqual({
       id: "profile-3",
       name: "Riley Admin",
+      username: "riley_admin",
       email: "riley@campus.edu",
       role: "admin",
     });
@@ -70,6 +76,7 @@ describe("validateSignUpInput", () => {
     expect(
       validateSignUpInput({
         name: "Casey Organizer",
+        username: "casey_organizer",
         email: "casey@campus.edu",
         password: "password123",
         confirmPassword: "password123",
@@ -77,5 +84,9 @@ describe("validateSignUpInput", () => {
         requestedClubSlug: "",
       })
     ).toBe("Choose the club you want to represent.");
+  });
+
+  it("requires a normalized username", () => {
+    expect(validateSignUpInput({ name: "Avery", username: "Avery Name", email: "avery@campus.edu", password: "password123", confirmPassword: "password123", requestedRole: "participant" })).toContain("username");
   });
 });
